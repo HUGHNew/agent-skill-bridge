@@ -1,0 +1,20 @@
+{
+    "default": {
+        "project": ".agents",
+        "global": "~/.config/agents"
+    },
+    "claude-code": {
+        "project": ".claude",
+        "global": "~/.claude"
+    },
+    "codex": {
+        "global": "~/.codex"
+    },
+    "crush": {
+        "project": ".crush",
+        "global": "~/.crush"
+    },
+    "deepagents": {
+        "global": "~/.deepagents/agent"
+    }
+}

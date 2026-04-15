@@ -1,0 +1,202 @@
+# SkillBridge
+
+SkillBridge is a CLI for managing AI agent skills across different harnesses
+such as Codex, Claude Code, Crush, and DeepAgents.
+
+It keeps a shared skill store, copies or links skills into harness-level global
+and project-level skill folders, tracks project usage, and can sync skills
+between harnesses.
+
+Features:
+- skill list/remove
+- skill link/copy
+- skill sync
+- harness config management
+- shell completion
+
+The manager files are stored under:
+
+```python
+os.getenv("XDG_CONFIG_HOME", "~/.config") + "/" + project_name
+```
+
+The shared skill store is:
+
+```python
+os.getenv("XDG_CONFIG_HOME", "~/.config") + "/agents"
+```
+
+A harness is an agent tool that consumes skills, such as Codex or Claude Code.
+Global and project storage are the harness's own global-level and project-level
+configuration paths.
+
+SkillBridge maintains the skills folder and a usage file for tracking:
+
+```python
+os.getenv("XDG_CONFIG_HOME", "~/.config") + "/" + project_name + "/usage.json"
+```
+
+Usage tracking (the <harness> must exist in the [mapper](#config)):
+```text
+<harness>: {
+    "projects": {
+        <proj>: {
+            <skill>: <mode>
+        }
+    }
+}
+```
+
+## Install
+
+```sh
+uv sync --python 3.10 --link-mode copy
+```
+
+Run the CLI with:
+
+```sh
+uv run --python 3.10 skill-bridge --help
+```
+
+The package also installs a `skillbridge` alias.
+
+## List
+
+Show skills of the current project.
+
+By default, `list` detects harnesses used by the current project. A harness is
+considered used when its project prefix exists in the current project; the
+`skills` folder does not need to exist yet. It then shows both project and
+global levels for those harnesses. Be quiet if there is nothing to show.
+
+```sh
+skill-bridge list [<harness>] [--global | --project]
+```
+
+- `-g`/`--global`: global only (any folder)
+- `-p`/`--project`: project only
+- By default, we list project level and global level with level title
+- `list -g` shows global skills for the detected project harnesses and the
+  default global skills
+
+Example:
+```
+Project:
+- <skill-name>
+...
+
+Global (<harness>):
+- <skill-name>
+```
+
+## Remove
+
+```sh
+skill-bridge remove <skill-name | skill-folder> [<harness>] [--global] [--link] [--all]
+```
+
+For <skill-name>
+- `-g`/`--global`: global only
+- `-l`/`--link`: remove the symlink and its linked shared-store skill
+- `-a`/`--all`: requires a skill name, removes it from the default global store
+  and from project paths recorded in usage
+- By default, we just remove the skill from current project
+
+For <skill-folder> (absolute path or relative path)
+- For global skill, we do as `remove <skill-name> -a`
+- For project skill, we do as `remove <skill-name>`
+
+For unknown name/folder, just show error message
+
+## Link/Copy
+
+```sh
+skill-bridge copy <skill-names> [<harness>] [-p | -g]
+skill-bridge link <skill-names> [<harness>] [-p | -g]
+```
+
+Copy/Link skill from the shared skill store into a harness global or project
+path.
+
+- no argument: open a terminal UI picker for the shared skill store
+- `-p`/`--project`: operation on project level
+- `-g`/`--global`: operation on global level
+- By default, operation on project level
+- trailing `<harness>`: use that harness instead of `default`
+
+## Sync
+
+```sh
+skill-bridge sync <src_harness> <dst_harness> [--copy] [--all] [-p | -g]
+```
+
+Sync all skills from the SkillBridge shared store into another harness global
+or project path. The source harness is used to detect skills that exist in the
+source global path but are missing from the shared store.
+
+- By default, sync in link mode from the shared store
+- `-c`/`--copy`: sync in copy mode
+- `-a`/`--all`: copy source-only skills into the shared store before syncing
+- Without `-a`, source-only skills are reported as warnings and are not synced
+- If the source harness has no global skills, sync completes without changing
+  the destination and reports that the source has no skills
+- When sync runs, it reports the number of skills synced to the destination
+- `-p`/`--project`: operation on project level
+- `-g`/`--global`: operation on global level
+- By default, operation on project level
+
+## Completion
+
+```sh
+skill-bridge completion zsh
+skill-bridge completion bash
+```
+
+Output the completion script in stdout
+
+## Config
+
+```sh
+skill-bridge config list
+skill-bridge config add <harness> [-p <project>] [-g <global>]
+skill-bridge config remove <harness> [-p | -g] [-a]
+```
+
+`config list` shows every harness config except `default`.
+
+`config add` adds the fields that are provided. If neither `-p` nor `-g` is
+provided, the harness is stored as an empty object. If the harness already
+exists, SkillBridge asks whether to overwrite it and defaults to no.
+
+`config remove` removes the whole harness config by default. With `-p` or `-g`,
+it removes only that field. By default, SkillBridge asks whether to delete the
+related global and recorded project skill folders. With `-a`, it deletes them
+without asking.
+
+Default storage:
+- project: .agents/skills
+- global: os.getenv("XDG_CONFIG_HOME", "~/.config") + "/agents/skills"
+
+For different harness, the mapper file is:
+
+```python
+os.getenv("XDG_CONFIG_HOME", "~/.config") + "/" + project_name + "/map.json"
+```
+
+The `default` entry is always provided by SkillBridge and is not shown by
+`config list`.
+
+```json
+<harness> : {
+    "project": <prefix>,
+    "global": <prefix>
+}
+```
+
+Then we get the folder by:
+```python
+harness = mapper.get(name, mapper["default"])
+project_folder = harness.get("project", mapper["default"]["project"]) / "skills"
+global_folder = harness.get("global", mapper["default"]["global"]) / "skills"
+```
