@@ -11,6 +11,7 @@ Features:
 - skill list/remove
 - skill link/copy
 - skill sync
+- usage output
 - harness config management
 - shell completion
 
@@ -182,6 +183,29 @@ asb completion bash
 ```
 
 Output the completion script in stdout
+
+## Usage
+
+```sh
+asb usage
+```
+
+Print `asb-usage.json` as globals first, then projects.
+
+Global usage:
+```text
+<harness>
+  <skill>
+  <skill>
+```
+
+Project usage:
+```text
+<harness>
+  <project-path>
+    <skill>
+    <skill>
+```
 
 ## Config
 

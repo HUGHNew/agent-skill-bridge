@@ -16,6 +16,7 @@ if __package__ in {None, ""}:
         cmd_list,
         cmd_remove,
         cmd_sync,
+        cmd_usage,
     )
 else:
     from .commands import (
@@ -28,6 +29,7 @@ else:
         cmd_list,
         cmd_remove,
         cmd_sync,
+        cmd_usage,
     )
 
 
@@ -68,6 +70,9 @@ def build_parser() -> argparse.ArgumentParser:
     completion_parser = subparsers.add_parser("completion", help="print shell completion")
     completion_parser.add_argument("shell", choices=["bash", "zsh"])
     completion_parser.set_defaults(func=cmd_completion)
+
+    usage_parser = subparsers.add_parser("usage", help="print recorded skill usage")
+    usage_parser.set_defaults(func=cmd_usage)
 
     config_parser = subparsers.add_parser("config", help="manage harness configs")
     config_subparsers = config_parser.add_subparsers(dest="config_command", required=True)

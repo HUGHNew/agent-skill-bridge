@@ -9,7 +9,7 @@ from typing import Any
 from .config import Context, default_mapper, load_config_map, save_config_map, shared_store
 from .picker import choose_harness, choose_skills
 from .skills import copy_skill, iter_skills, link_skill, remove_path, remove_skill, unique_paths
-from .usage import remove_harness_usage, usage_project_paths
+from .usage import load_usage, remove_harness_usage, usage_project_paths
 
 
 RESET = "\033[0m"
@@ -220,10 +220,48 @@ def style_skill(skill: str) -> str:
 def cmd_completion(args: argparse.Namespace) -> int:
     command = "asb"
     if args.shell == "bash":
-        print(f"complete -W 'list copy link remove sync completion config' {command}")
+        print(f"complete -W 'list copy link remove sync completion usage config' {command}")
     else:
-        print(f"#compdef {command}\n_arguments '1:command:(list copy link remove sync completion config)'")
+        print(f"#compdef {command}\n_arguments '1:command:(list copy link remove sync completion usage config)'")
     return 0
+
+
+def cmd_usage(args: argparse.Namespace) -> int:
+    usage = load_usage()
+    print("[global]:")
+    print_usage_globals(usage)
+    print("\n[project]:")
+    print_usage_projects(usage)
+    return 0
+
+
+def print_usage_globals(usage: dict[str, Any]) -> None:
+    printed: set[str] = set()
+    for harness_usage in usage.values():
+        globals_ = harness_usage.get("globals", {})
+        if not isinstance(globals_, dict):
+            continue
+        for harness, skills in globals_.items():
+            if not isinstance(skills, dict) or harness in printed:
+                continue
+            print(harness)
+            for skill in skills:
+                print(f"  - {skill}")
+            printed.add(harness)
+
+
+def print_usage_projects(usage: dict[str, Any]) -> None:
+    for harness, harness_usage in usage.items():
+        projects = harness_usage.get("projects", {})
+        if not isinstance(projects, dict) or not projects:
+            continue
+        print(harness)
+        for project, skills in projects.items():
+            if not isinstance(skills, dict):
+                continue
+            print(f"  {project}")
+            for skill in skills:
+                print(f"    - {skill}")
 
 
 def cmd_config_list(args: argparse.Namespace) -> int:
