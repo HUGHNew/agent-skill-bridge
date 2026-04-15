@@ -35,8 +35,26 @@ class SyncCommandTests(unittest.TestCase):
                     main(["sync", "src", "dst", "--project", "--copy"])
 
                 self.assertTrue((project_root / ".dst" / "skills" / "demo" / "SKILL.md").exists())
-                usage = json.loads((Path(config_dir) / "agent-skill-bridge" / "usage.json").read_text(encoding="utf-8"))
+                usage = json.loads((Path(config_dir) / "agents" / "asb-usage.json").read_text(encoding="utf-8"))
                 self.assertEqual(usage["dst"]["projects"][str(project_root.resolve())]["demo"], "copy")
+
+    def test_sync_global_records_usage(self) -> None:
+        with tempfile.TemporaryDirectory() as config_dir, tempfile.TemporaryDirectory() as cwd:
+            project_root = Path(cwd)
+            with mock.patch.dict(os.environ, {"XDG_CONFIG_HOME": config_dir}), mock.patch("pathlib.Path.cwd", return_value=project_root):
+                src_root = Path(config_dir) / "src"
+                dst_root = Path(config_dir) / "dst"
+                with redirect_stdout(StringIO()):
+                    main(["config", "add", "src", "-g", str(src_root)])
+                    main(["config", "add", "dst", "-p", ".dst", "-g", str(dst_root)])
+                (src_root / "skills" / "demo").mkdir(parents=True)
+                (shared_store() / "demo").mkdir(parents=True)
+
+                with redirect_stdout(StringIO()):
+                    main(["sync", "src", "dst", "--global"])
+
+                usage = json.loads((Path(config_dir) / "agents" / "asb-usage.json").read_text(encoding="utf-8"))
+                self.assertEqual(usage["dst"]["globals"]["dst"]["demo"], "link")
 
     def test_sync_warns_for_source_only_skills_without_all(self) -> None:
         with tempfile.TemporaryDirectory() as config_dir, tempfile.TemporaryDirectory() as cwd:

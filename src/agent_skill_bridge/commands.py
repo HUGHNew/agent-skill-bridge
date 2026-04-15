@@ -7,7 +7,7 @@ from pathlib import Path
 from typing import Any
 
 from .config import Context, default_mapper, load_config_map, save_config_map, shared_store
-from .picker import choose_skills
+from .picker import choose_harness, choose_skills
 from .skills import copy_skill, iter_skills, link_skill, remove_path, remove_skill, unique_paths
 from .usage import remove_harness_usage, usage_project_paths
 
@@ -20,18 +20,25 @@ def confirm(prompt: str) -> bool:
     return answer.strip().lower() in {"y", "yes"}
 
 
-def split_skills_and_harness(values: list[str], ctx: Context) -> tuple[list[str], str]:
-    if len(values) > 1 and values[-1] in ctx.mapper:
-        return values[:-1], values[-1]
-    return values, "default"
+def split_harness_and_skills(values: list[str], ctx: Context) -> tuple[str, list[str]]:
+    if not values:
+        return choose_harness(ctx, include_default=False), choose_skills()
+    harness = values[0]
+    if harness not in ctx.mapper:
+        raise SystemExit(f"Unknown harness: {harness}")
+    skills = values[1:] or choose_skills()
+    return harness, skills
 
 
-def split_target_and_harness(values: list[str], ctx: Context) -> tuple[str, str]:
-    if len(values) == 1:
-        return values[0], "default"
-    if len(values) == 2 and values[-1] in ctx.mapper:
-        return values[0], values[1]
-    raise SystemExit("Expected: remove <skill-name | skill-folder> [harness]")
+def split_harness_and_targets(values: list[str], ctx: Context, args: argparse.Namespace) -> tuple[str, list[str]]:
+    if not values:
+        harness = choose_harness(ctx)
+        return harness, choose_skills(ctx.target_skills(harness, target_project(args)))
+    harness = values[0]
+    if harness not in ctx.mapper:
+        raise SystemExit(f"Unknown harness: {harness}")
+    targets = values[1:] or choose_skills(ctx.target_skills(harness, target_project(args)))
+    return harness, targets
 
 
 def cmd_list(args: argparse.Namespace) -> int:
@@ -97,9 +104,7 @@ def cmd_link(args: argparse.Namespace) -> int:
 
 def run_import(args: argparse.Namespace, action: Any, label: str) -> int:
     ctx = Context.create()
-    skills, harness = split_skills_and_harness(args.values, ctx)
-    if not skills:
-        skills = choose_skills()
+    harness, skills = split_harness_and_skills(args.values, ctx)
     for skill in skills:
         destination = action(skill, harness, target_project(args), ctx)
         print(f"{label}: {skill} -> {destination}")
@@ -156,10 +161,11 @@ def mirror_skill_to_shared_store(source: Path, skill: str) -> None:
 
 def cmd_remove(args: argparse.Namespace) -> int:
     ctx = Context.create()
-    target, harness = split_target_and_harness(args.values, ctx)
-    removed = remove_skill(target, harness, args.global_, args.link, args.all, ctx)
-    for path in removed:
-        print(f"removed: {path}")
+    harness, targets = split_harness_and_targets(args.values, ctx, args)
+    for target in targets:
+        removed = remove_skill(target, harness, args.global_, args.link, args.all, ctx)
+        for path in removed:
+            print(f"removed: {path}")
     return 0
 
 

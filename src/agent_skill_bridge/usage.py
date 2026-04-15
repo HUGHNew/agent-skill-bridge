@@ -8,7 +8,7 @@ from .config import manager_root
 
 
 def usage_path() -> Path:
-    return manager_root() / "usage.json"
+    return manager_root() / "asb-usage.json"
 
 
 def load_usage() -> dict[str, Any]:
@@ -40,9 +40,19 @@ def record_usage(harness: str, project: Path, skill: str, mode: str) -> None:
     save_usage(usage)
 
 
+def record_global_usage(harness: str, skill: str, mode: str) -> None:
+    usage = load_usage()
+    harness_usage = usage.setdefault(harness, {})
+    globals_ = harness_usage.setdefault("globals", {})
+    skills = globals_.setdefault(harness, {})
+    skills[skill] = mode
+    save_usage(usage)
+
+
 def remove_usage(harness: str, project: Path, skill: str | None = None) -> None:
     usage = load_usage()
-    projects = usage.get(harness, {}).get("projects", {})
+    harness_usage = usage.get(harness, {})
+    projects = harness_usage.get("projects", {})
     skills = projects.get(project_key(project))
     if not isinstance(skills, dict):
         return
@@ -50,6 +60,32 @@ def remove_usage(harness: str, project: Path, skill: str | None = None) -> None:
         skills.clear()
     else:
         skills.pop(skill, None)
+    if not skills:
+        projects.pop(project_key(project), None)
+    if not projects:
+        harness_usage.pop("projects", None)
+    if harness in usage and not harness_usage:
+        usage.pop(harness, None)
+    save_usage(usage)
+
+
+def remove_global_usage(harness: str, skill: str | None = None) -> None:
+    usage = load_usage()
+    harness_usage = usage.get(harness, {})
+    globals_ = harness_usage.get("globals", {})
+    skills = globals_.get(harness)
+    if not isinstance(skills, dict):
+        return
+    if skill is None:
+        skills.clear()
+    else:
+        skills.pop(skill, None)
+    if not skills:
+        globals_.pop(harness, None)
+    if not globals_:
+        harness_usage.pop("globals", None)
+    if harness in usage and not harness_usage:
+        usage.pop(harness, None)
     save_usage(usage)
 
 
@@ -63,6 +99,18 @@ def find_skill_usage(skill: str) -> list[tuple[str, Path]]:
             if not isinstance(skills, dict) or skill not in skills:
                 continue
             matches.append((harness, Path(project)))
+    return matches
+
+
+def find_skill_global_usage(skill: str) -> list[str]:
+    matches: list[str] = []
+    for harness, harness_usage in load_usage().items():
+        globals_ = harness_usage.get("globals", {})
+        if not isinstance(globals_, dict):
+            continue
+        skills = globals_.get(harness, {})
+        if isinstance(skills, dict) and skill in skills:
+            matches.append(harness)
     return matches
 
 
@@ -81,13 +129,35 @@ def remove_skill_usage_entries(skill: str, entries: list[tuple[str, Path]]) -> N
         if not skills:
             projects.pop(project, None)
         if not projects:
+            harness_usage.pop("projects", None)
+        if harness in usage and not harness_usage:
+            usage.pop(harness, None)
+    save_usage(usage)
+
+
+def remove_skill_global_usage_entries(skill: str, entries: list[str]) -> None:
+    usage = load_usage()
+    for harness in entries:
+        harness_usage = usage.get(harness, {})
+        globals_ = harness_usage.get("globals", {})
+        if not isinstance(globals_, dict):
+            continue
+        skills = globals_.get(harness)
+        if not isinstance(skills, dict) or skill not in skills:
+            continue
+        skills.pop(skill, None)
+        if not skills:
+            globals_.pop(harness, None)
+        if not globals_ and not harness_usage.get("projects"):
             usage.pop(harness, None)
     save_usage(usage)
 
 
 def remove_skill_usage_everywhere(skill: str) -> list[tuple[str, Path]]:
     entries = find_skill_usage(skill)
+    global_entries = find_skill_global_usage(skill)
     remove_skill_usage_entries(skill, entries)
+    remove_skill_global_usage_entries(skill, global_entries)
     return entries
 
 

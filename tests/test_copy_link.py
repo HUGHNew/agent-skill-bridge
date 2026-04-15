@@ -39,7 +39,7 @@ class CopyLinkTests(unittest.TestCase):
                 self.assertTrue(linked.is_symlink())
                 self.assertEqual(iter_skills(Path(cwd) / ".agents" / "skills"), ["demo"])
 
-    def test_copy_and_remove_accept_trailing_harness(self) -> None:
+    def test_copy_and_remove_accept_leading_harness(self) -> None:
         with tempfile.TemporaryDirectory() as config_dir:
             with mock.patch.dict(os.environ, {"XDG_CONFIG_HOME": config_dir}):
                 with redirect_stdout(StringIO()):
@@ -48,11 +48,11 @@ class CopyLinkTests(unittest.TestCase):
                 (shared_store() / "demo" / "SKILL.md").write_text("demo\n", encoding="utf-8")
 
                 with redirect_stdout(StringIO()):
-                    main(["copy", "demo", "tool", "--global"])
+                    main(["copy", "tool", "demo", "--global"])
                 self.assertTrue((Path(config_dir) / "tool" / "skills" / "demo").exists())
 
                 with redirect_stdout(StringIO()):
-                    main(["remove", "demo", "tool", "--global"])
+                    main(["remove", "tool", "demo", "--global"])
                 self.assertFalse((Path(config_dir) / "tool" / "skills" / "demo").exists())
 
     def test_copy_defaults_to_project_level(self) -> None:
@@ -61,10 +61,39 @@ class CopyLinkTests(unittest.TestCase):
                 (shared_store() / "demo").mkdir(parents=True)
 
                 with redirect_stdout(StringIO()):
-                    main(["copy", "demo"])
+                    main(["copy", "default", "demo"])
 
                 self.assertTrue((Path(cwd) / ".agents" / "skills" / "demo").exists())
                 self.assertFalse((Path(cwd) / ".agents" / "skills" / "demo").is_symlink())
+
+    def test_copy_without_positionals_picks_harness_then_skills(self) -> None:
+        with tempfile.TemporaryDirectory() as config_dir, tempfile.TemporaryDirectory() as cwd:
+            with mock.patch.dict(os.environ, {"XDG_CONFIG_HOME": config_dir}), mock.patch("pathlib.Path.cwd", return_value=Path(cwd)):
+                (shared_store() / "demo").mkdir(parents=True)
+                with redirect_stdout(StringIO()):
+                    main(["config", "add", "tool", "-p", ".tool"])
+
+                with (
+                    mock.patch("agent_skill_bridge.commands.choose_harness", return_value="tool") as harness_picker,
+                    mock.patch("agent_skill_bridge.commands.choose_skills", return_value=["demo"]) as skill_picker,
+                    redirect_stdout(StringIO()),
+                ):
+                    main(["copy"])
+
+                harness_picker.assert_called_once()
+                self.assertEqual(harness_picker.call_args.kwargs, {"include_default": False})
+                skill_picker.assert_called_once()
+                self.assertTrue((Path(cwd) / ".tool" / "skills" / "demo").exists())
+
+    def test_copy_requires_leading_harness_when_positionals_exist(self) -> None:
+        with tempfile.TemporaryDirectory() as config_dir:
+            with mock.patch.dict(os.environ, {"XDG_CONFIG_HOME": config_dir}):
+                (shared_store() / "demo").mkdir(parents=True)
+
+                with self.assertRaises(SystemExit) as raised:
+                    main(["copy", "demo"])
+
+                self.assertEqual(str(raised.exception), "Unknown harness: demo")
 
 
 if __name__ == "__main__":

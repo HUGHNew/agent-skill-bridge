@@ -6,15 +6,12 @@ from dataclasses import dataclass
 from pathlib import Path
 
 
-PROJECT_NAME = "agent-skill-bridge"
-
-
 def config_home() -> Path:
     return Path(os.getenv("XDG_CONFIG_HOME", "~/.config")).expanduser()
 
 
 def manager_root() -> Path:
-    return config_home() / PROJECT_NAME
+    return config_home() / "agents"
 
 
 def shared_store() -> Path:
@@ -45,31 +42,38 @@ def default_mapper() -> dict[str, dict[str, str]]:
 
 
 def config_map_path() -> Path:
-    return manager_root() / "map.json"
+    return manager_root() / "asb-mapper.json"
 
 
-def load_config_map() -> dict[str, dict[str, str]]:
+def load_config_file() -> dict[str, dict[str, str]]:
     config_path = config_map_path()
     if config_path.exists():
         with config_path.open("r", encoding="utf-8") as fh:
             raw = json.load(fh)
     else:
         raw = default_mapper()
+        config_path.parent.mkdir(parents=True, exist_ok=True)
+        with config_path.open("w", encoding="utf-8") as fh:
+            json.dump(raw, fh, indent=2)
+            fh.write("\n")
 
     mapper: dict[str, dict[str, str]] = {}
     for harness, values in raw.items():
-        if harness == "default":
-            continue
         if not isinstance(values, dict):
             raise SystemExit(f"Invalid mapper entry for {harness!r}: expected object")
         mapper[harness] = {key: str(value) for key, value in values.items()}
     return mapper
 
 
+def load_config_map() -> dict[str, dict[str, str]]:
+    return {harness: values for harness, values in load_config_file().items() if harness != "default"}
+
+
 def save_config_map(mapper: dict[str, dict[str, str]]) -> None:
     path = config_map_path()
     path.parent.mkdir(parents=True, exist_ok=True)
-    data = {name: values for name, values in mapper.items() if name != "default"}
+    data = default_mapper()
+    data.update({name: values for name, values in mapper.items() if name != "default"})
     with path.open("w", encoding="utf-8") as fh:
         json.dump(data, fh, indent=2)
         fh.write("\n")
@@ -77,8 +81,8 @@ def save_config_map(mapper: dict[str, dict[str, str]]) -> None:
 
 def load_mapper() -> dict[str, dict[str, str]]:
     defaults = default_mapper()
-    mapper = {"default": defaults["default"]}
-    mapper.update(load_config_map())
+    mapper = load_config_file()
+    mapper.setdefault("default", defaults["default"])
     return mapper
 
 

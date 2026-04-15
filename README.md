@@ -17,7 +17,7 @@ Features:
 The manager files are stored under:
 
 ```python
-os.getenv("XDG_CONFIG_HOME", "~/.config") + "/" + project_name
+os.getenv("XDG_CONFIG_HOME", "~/.config") + "/" + "agents"
 ```
 
 The shared skill store is:
@@ -33,7 +33,7 @@ configuration paths.
 Agent Skill Bridge maintains the skills folder and a usage file for tracking:
 
 ```python
-os.getenv("XDG_CONFIG_HOME", "~/.config") + "/" + project_name + "/usage.json"
+os.getenv("XDG_CONFIG_HOME", "~/.config") + "/" + "agents" + "/asb-usage.json"
 ```
 
 Usage tracking (the <harness> must exist in the [mapper](#config)):
@@ -41,6 +41,11 @@ Usage tracking (the <harness> must exist in the [mapper](#config)):
 <harness>: {
     "projects": {
         <proj>: {
+            <skill>: <mode>
+        }
+    },
+    "globals": {
+        <harness>: {
             <skill>: <mode>
         }
     }
@@ -93,7 +98,7 @@ Global (<harness>):
 ## Remove
 
 ```sh
-asb remove <skill-name | skill-folder> [<harness>] [--global] [--link] [--all]
+asb remove [<harness>] [<skill-name | skill-folder>...] [--global] [--link] [--all]
 ```
 
 For <skill-name>
@@ -102,28 +107,37 @@ For <skill-name>
 - `-a`/`--all`: requires a skill name, removes it from the default global store
   and from project paths recorded in usage
 - By default, we just remove the skill from current project
+- no harness: open a terminal UI picker for harness first, then skills
+- skill picker controls: Arrow moves, Space selects, Enter confirms
+- first positional argument: harness name
+- project-level remove deletes the project prefix too when it only contains an
+  empty `skills` folder
 
 For <skill-folder> (absolute path or relative path)
-- For global skill, we do as `remove <skill-name> -a`
-- For project skill, we do as `remove <skill-name>`
+- For global skill, remove from the default global store and recorded usage
+- For project skill, remove from the detected project harness path
 
 For unknown name/folder, just show error message
 
 ## Link/Copy
 
 ```sh
-asb copy <skill-names> [<harness>] [-p | -g]
-asb link <skill-names> [<harness>] [-p | -g]
+asb copy [<harness>] [<skill-names>...] [-p | -g]
+asb link [<harness>] [<skill-names>...] [-p | -g]
 ```
 
 Copy/Link skill from the shared skill store into a harness global or project
 path.
 
-- no argument: open a terminal UI picker for the shared skill store
+- no argument: open a terminal UI picker for harness first, then skills
+- copy/link harness picker does not show `default`
+- harness only: open a terminal UI picker for skills
+- harness picker controls: Arrow moves, Enter confirms
+- skill picker controls: Arrow moves, Space selects, Enter confirms
 - `-p`/`--project`: operation on project level
 - `-g`/`--global`: operation on global level
 - By default, operation on project level
-- trailing `<harness>`: use that harness instead of `default`
+- first positional argument: harness name
 
 ## Sync
 
@@ -181,7 +195,7 @@ Default storage:
 For different harness, the mapper file is:
 
 ```python
-os.getenv("XDG_CONFIG_HOME", "~/.config") + "/" + project_name + "/map.json"
+os.getenv("XDG_CONFIG_HOME", "~/.config") + "/" + "agents" + "/asb-mapper.json"
 ```
 
 The `default` entry is always provided by Agent Skill Bridge and is not shown by

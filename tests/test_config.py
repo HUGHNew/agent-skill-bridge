@@ -23,13 +23,23 @@ class ConfigCommandTests(unittest.TestCase):
                     main(["config", "add", "custom", "-p", ".custom", "-g", str(Path(config_dir) / "custom")])
                     main(["config", "add", "empty"])
 
-                map_path = Path(config_dir) / "agent-skill-bridge" / "map.json"
+                map_path = Path(config_dir) / "agents" / "asb-mapper.json"
                 self.assertIn('"custom"', map_path.read_text(encoding="utf-8"))
                 self.assertIn('"empty": {}', map_path.read_text(encoding="utf-8"))
 
                 with redirect_stdout(StringIO()):
                     main(["config", "remove", "empty"])
                 self.assertNotIn('"empty"', map_path.read_text(encoding="utf-8"))
+
+    def test_config_file_is_initialized_with_defaults(self) -> None:
+        with tempfile.TemporaryDirectory() as config_dir:
+            with mock.patch.dict(os.environ, {"XDG_CONFIG_HOME": config_dir}):
+                config = load_config_map()
+
+                map_path = Path(config_dir) / "agents" / "asb-mapper.json"
+                self.assertTrue(map_path.exists())
+                self.assertIn("codex", config)
+                self.assertIn('"default"', map_path.read_text(encoding="utf-8"))
 
     def test_config_list_output_format(self) -> None:
         with tempfile.TemporaryDirectory() as config_dir:

@@ -44,13 +44,13 @@ def build_parser() -> argparse.ArgumentParser:
 
     for name, func in (("copy", cmd_copy), ("link", cmd_link)):
         import_parser = subparsers.add_parser(name, help=f"{name} skills from the shared store")
-        import_parser.add_argument("values", nargs="*", help="skill names, optionally ending with a harness name")
+        import_parser.add_argument("values", nargs="*", help="harness name followed by optional skill names")
         import_parser.add_argument("-p", "--project", action="store_true", help="write into project-level harness config")
         import_parser.add_argument("-g", "--global", dest="global_", action="store_true", help="write into harness global config")
         import_parser.set_defaults(func=func)
 
     remove_parser = subparsers.add_parser("remove", help="remove a skill")
-    remove_parser.add_argument("values", nargs="+", help="skill name or folder, optionally followed by a harness name")
+    remove_parser.add_argument("values", nargs="*", help="harness name followed by optional skill names or folders")
     remove_parser.add_argument("-g", "--global", dest="global_", action="store_true", help="remove from harness global skills")
     remove_parser.add_argument("-l", "--link", action="store_true", help="remove linked shared-store skill too")
     remove_parser.add_argument("-a", "--all", action="store_true", help="remove from default global and recorded project usage")
