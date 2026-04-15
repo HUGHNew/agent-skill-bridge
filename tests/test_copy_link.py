@@ -11,9 +11,9 @@ from unittest import mock
 
 sys.path.insert(0, str(Path(__file__).parents[1] / "src"))
 
-from skillbridge.cli import main
-from skillbridge.config import Context, shared_store
-from skillbridge.skills import copy_skill, iter_skills, link_skill
+from agent_skill_bridge.cli import main
+from agent_skill_bridge.config import Context, shared_store
+from agent_skill_bridge.skills import copy_skill, iter_skills, link_skill
 
 
 class CopyLinkTests(unittest.TestCase):

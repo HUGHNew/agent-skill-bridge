@@ -6,7 +6,7 @@ from dataclasses import dataclass
 from pathlib import Path
 
 
-PROJECT_NAME = "skillbridge"
+PROJECT_NAME = "agent-skill-bridge"
 
 
 def config_home() -> Path:

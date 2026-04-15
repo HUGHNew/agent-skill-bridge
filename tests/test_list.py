@@ -11,7 +11,7 @@ from unittest import mock
 
 sys.path.insert(0, str(Path(__file__).parents[1] / "src"))
 
-from skillbridge.cli import main
+from agent_skill_bridge.cli import main
 
 
 class ListCommandTests(unittest.TestCase):

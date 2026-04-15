@@ -9,8 +9,8 @@ from unittest import mock
 
 sys.path.insert(0, str(Path(__file__).parents[1] / "src"))
 
-from skillbridge.config import shared_store
-from skillbridge.picker import choose_skills
+from agent_skill_bridge.config import shared_store
+from agent_skill_bridge.picker import choose_skills
 
 
 class PickerTests(unittest.TestCase):
@@ -18,7 +18,7 @@ class PickerTests(unittest.TestCase):
         with tempfile.TemporaryDirectory() as config_dir:
             with mock.patch.dict(os.environ, {"XDG_CONFIG_HOME": config_dir}):
                 (shared_store() / "demo").mkdir(parents=True)
-                with mock.patch("skillbridge.picker.curses.wrapper", return_value=["demo"]) as wrapper:
+                with mock.patch("agent_skill_bridge.picker.curses.wrapper", return_value=["demo"]) as wrapper:
                     self.assertEqual(choose_skills(), ["demo"])
                 wrapper.assert_called_once()
 

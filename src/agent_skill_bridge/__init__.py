@@ -1,4 +1,4 @@
-"""SkillBridge CLI package."""
+"""Agent Skill Bridge CLI package."""
 
 from .cli import main
 

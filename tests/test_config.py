@@ -11,8 +11,8 @@ from unittest import mock
 
 sys.path.insert(0, str(Path(__file__).parents[1] / "src"))
 
-from skillbridge.cli import main
-from skillbridge.config import load_config_map
+from agent_skill_bridge.cli import main
+from agent_skill_bridge.config import load_config_map
 
 
 class ConfigCommandTests(unittest.TestCase):
@@ -23,7 +23,7 @@ class ConfigCommandTests(unittest.TestCase):
                     main(["config", "add", "custom", "-p", ".custom", "-g", str(Path(config_dir) / "custom")])
                     main(["config", "add", "empty"])
 
-                map_path = Path(config_dir) / "skillbridge" / "map.json"
+                map_path = Path(config_dir) / "agent-skill-bridge" / "map.json"
                 self.assertIn('"custom"', map_path.read_text(encoding="utf-8"))
                 self.assertIn('"empty": {}', map_path.read_text(encoding="utf-8"))
 

@@ -8,7 +8,7 @@ from pathlib import Path
 
 sys.path.insert(0, str(Path(__file__).parents[1] / "src"))
 
-from skillbridge.cli import main
+from agent_skill_bridge.cli import main
 
 
 class CliEntrypointTests(unittest.TestCase):
@@ -18,7 +18,7 @@ class CliEntrypointTests(unittest.TestCase):
             main(["--help"])
 
         self.assertEqual(raised.exception.code, 0)
-        self.assertIn("skill-bridge", output.getvalue())
+        self.assertIn("asb", output.getvalue())
 
 
 if __name__ == "__main__":

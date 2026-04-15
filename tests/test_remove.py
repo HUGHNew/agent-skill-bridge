@@ -12,10 +12,10 @@ from unittest import mock
 
 sys.path.insert(0, str(Path(__file__).parents[1] / "src"))
 
-from skillbridge.cli import main
-from skillbridge.config import Context, shared_store
-from skillbridge.skills import copy_skill
-from skillbridge.usage import record_usage
+from agent_skill_bridge.cli import main
+from agent_skill_bridge.config import Context, shared_store
+from agent_skill_bridge.skills import copy_skill
+from agent_skill_bridge.usage import record_usage
 
 
 class RemoveCommandTests(unittest.TestCase):
@@ -87,7 +87,7 @@ class RemoveCommandTests(unittest.TestCase):
                 with redirect_stdout(StringIO()):
                     main(["remove", "demo", "--all"])
 
-                usage_path = Path(config_dir) / "skillbridge" / "usage.json"
+                usage_path = Path(config_dir) / "agent-skill-bridge" / "usage.json"
                 usage = json.loads(usage_path.read_text(encoding="utf-8"))
                 self.assertEqual(usage["default"]["projects"][str(missing_project.resolve())]["demo"], "copy")
 

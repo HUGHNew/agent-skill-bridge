@@ -164,7 +164,7 @@ def cmd_remove(args: argparse.Namespace) -> int:
 
 
 def cmd_completion(args: argparse.Namespace) -> int:
-    command = "skill-bridge"
+    command = "asb"
     if args.shell == "bash":
         print(f"complete -W 'list copy link remove sync completion config' {command}")
     else:

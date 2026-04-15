@@ -6,7 +6,7 @@ from pathlib import Path
 
 if __package__ in {None, ""}:
     sys.path.insert(0, str(Path(__file__).resolve().parents[1]))
-    from skillbridge.commands import (  # type: ignore[no-redef]
+    from agent_skill_bridge.commands import (  # type: ignore[no-redef]
         cmd_completion,
         cmd_config_add,
         cmd_config_list,
@@ -32,7 +32,7 @@ else:
 
 
 def build_parser() -> argparse.ArgumentParser:
-    parser = argparse.ArgumentParser(prog="skill-bridge")
+    parser = argparse.ArgumentParser(prog="asb")
     subparsers = parser.add_subparsers(dest="command", required=True)
 
     list_parser = subparsers.add_parser("list", help="list skills")

@@ -12,8 +12,8 @@ from unittest import mock
 
 sys.path.insert(0, str(Path(__file__).parents[1] / "src"))
 
-from skillbridge.cli import main
-from skillbridge.config import shared_store
+from agent_skill_bridge.cli import main
+from agent_skill_bridge.config import shared_store
 
 
 class SyncCommandTests(unittest.TestCase):
@@ -35,7 +35,7 @@ class SyncCommandTests(unittest.TestCase):
                     main(["sync", "src", "dst", "--project", "--copy"])
 
                 self.assertTrue((project_root / ".dst" / "skills" / "demo" / "SKILL.md").exists())
-                usage = json.loads((Path(config_dir) / "skillbridge" / "usage.json").read_text(encoding="utf-8"))
+                usage = json.loads((Path(config_dir) / "agent-skill-bridge" / "usage.json").read_text(encoding="utf-8"))
                 self.assertEqual(usage["dst"]["projects"][str(project_root.resolve())]["demo"], "copy")
 
     def test_sync_warns_for_source_only_skills_without_all(self) -> None:

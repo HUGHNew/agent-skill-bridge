@@ -1,7 +1,7 @@
-# SkillBridge
+# Agent Skill Bridge
 
-SkillBridge is a CLI for managing AI agent skills across different harnesses
-such as Codex, Claude Code, Crush, and DeepAgents.
+Agent Skill Bridge is a CLI for managing AI agent skills across different
+harnesses such as Codex, Claude Code, Crush, and DeepAgents.
 
 It keeps a shared skill store, copies or links skills into harness-level global
 and project-level skill folders, tracks project usage, and can sync skills
@@ -23,14 +23,14 @@ os.getenv("XDG_CONFIG_HOME", "~/.config") + "/" + project_name
 The shared skill store is:
 
 ```python
-os.getenv("XDG_CONFIG_HOME", "~/.config") + "/agents"
+os.getenv("XDG_CONFIG_HOME", "~/.config") + "/agents/skills"
 ```
 
 A harness is an agent tool that consumes skills, such as Codex or Claude Code.
 Global and project storage are the harness's own global-level and project-level
 configuration paths.
 
-SkillBridge maintains the skills folder and a usage file for tracking:
+Agent Skill Bridge maintains the skills folder and a usage file for tracking:
 
 ```python
 os.getenv("XDG_CONFIG_HOME", "~/.config") + "/" + project_name + "/usage.json"
@@ -53,13 +53,13 @@ Usage tracking (the <harness> must exist in the [mapper](#config)):
 uv sync --python 3.10 --link-mode copy
 ```
 
-Run the CLI with:
+The package name is `agent-skill-bridge`. Run the CLI with `asb`:
 
 ```sh
-uv run --python 3.10 skill-bridge --help
+uv run --python 3.10 asb --help
 ```
 
-The package also installs a `skillbridge` alias.
+The long command `agent-skill-bridge` is also available.
 
 ## List
 
@@ -71,7 +71,7 @@ considered used when its project prefix exists in the current project; the
 global levels for those harnesses. Be quiet if there is nothing to show.
 
 ```sh
-skill-bridge list [<harness>] [--global | --project]
+asb list [<harness>] [--global | --project]
 ```
 
 - `-g`/`--global`: global only (any folder)
@@ -93,7 +93,7 @@ Global (<harness>):
 ## Remove
 
 ```sh
-skill-bridge remove <skill-name | skill-folder> [<harness>] [--global] [--link] [--all]
+asb remove <skill-name | skill-folder> [<harness>] [--global] [--link] [--all]
 ```
 
 For <skill-name>
@@ -112,8 +112,8 @@ For unknown name/folder, just show error message
 ## Link/Copy
 
 ```sh
-skill-bridge copy <skill-names> [<harness>] [-p | -g]
-skill-bridge link <skill-names> [<harness>] [-p | -g]
+asb copy <skill-names> [<harness>] [-p | -g]
+asb link <skill-names> [<harness>] [-p | -g]
 ```
 
 Copy/Link skill from the shared skill store into a harness global or project
@@ -128,12 +128,12 @@ path.
 ## Sync
 
 ```sh
-skill-bridge sync <src_harness> <dst_harness> [--copy] [--all] [-p | -g]
+asb sync <src_harness> <dst_harness> [--copy] [--all] [-p | -g]
 ```
 
-Sync all skills from the SkillBridge shared store into another harness global
-or project path. The source harness is used to detect skills that exist in the
-source global path but are missing from the shared store.
+Sync all skills from the Agent Skill Bridge shared store into another harness
+global or project path. The source harness is used to detect skills that exist
+in the source global path but are missing from the shared store.
 
 - By default, sync in link mode from the shared store
 - `-c`/`--copy`: sync in copy mode
@@ -149,8 +149,8 @@ source global path but are missing from the shared store.
 ## Completion
 
 ```sh
-skill-bridge completion zsh
-skill-bridge completion bash
+asb completion zsh
+asb completion bash
 ```
 
 Output the completion script in stdout
@@ -158,21 +158,21 @@ Output the completion script in stdout
 ## Config
 
 ```sh
-skill-bridge config list
-skill-bridge config add <harness> [-p <project>] [-g <global>]
-skill-bridge config remove <harness> [-p | -g] [-a]
+asb config list
+asb config add <harness> [-p <project>] [-g <global>]
+asb config remove <harness> [-p | -g] [-a]
 ```
 
 `config list` shows every harness config except `default`.
 
 `config add` adds the fields that are provided. If neither `-p` nor `-g` is
 provided, the harness is stored as an empty object. If the harness already
-exists, SkillBridge asks whether to overwrite it and defaults to no.
+exists, Agent Skill Bridge asks whether to overwrite it and defaults to no.
 
 `config remove` removes the whole harness config by default. With `-p` or `-g`,
-it removes only that field. By default, SkillBridge asks whether to delete the
-related global and recorded project skill folders. With `-a`, it deletes them
-without asking.
+it removes only that field. By default, Agent Skill Bridge asks whether to
+delete the related global and recorded project skill folders. With `-a`, it
+deletes them without asking.
 
 Default storage:
 - project: .agents/skills
@@ -184,7 +184,7 @@ For different harness, the mapper file is:
 os.getenv("XDG_CONFIG_HOME", "~/.config") + "/" + project_name + "/map.json"
 ```
 
-The `default` entry is always provided by SkillBridge and is not shown by
+The `default` entry is always provided by Agent Skill Bridge and is not shown by
 `config list`.
 
 ```json
