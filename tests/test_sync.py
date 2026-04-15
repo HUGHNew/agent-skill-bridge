@@ -128,7 +128,8 @@ class SyncCommandTests(unittest.TestCase):
                 with redirect_stdout(output):
                     main(["sync", "src", "dst"])
 
-                self.assertIn("synced 1 skills", output.getvalue())
+                self.assertIn("\033[32m[link]\033[0m[project] \033[3mshared\033[0m", output.getvalue())
+                self.assertIn("\033[34m[sync]\033[0m[project] \033[3m1 skills\033[0m", output.getvalue())
 
 
 if __name__ == "__main__":

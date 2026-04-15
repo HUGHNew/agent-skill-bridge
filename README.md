@@ -14,6 +14,15 @@ Features:
 - harness config management
 - shell completion
 
+Operation output uses:
+
+```text
+[<op>][<level>] <skill-name> -> <path>
+```
+
+`link` is green, `copy` is yellow, `remove` is red, `sync` is blue, `global` is
+bold, and the skill name is italic.
+
 The manager files are stored under:
 
 ```python

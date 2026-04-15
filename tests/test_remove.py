@@ -83,6 +83,24 @@ class RemoveCommandTests(unittest.TestCase):
                 self.assertFalse(folder.exists())
                 self.assertTrue(global_folder.exists())
 
+    def test_remove_link_outputs_link_and_shared_store_removals(self) -> None:
+        with tempfile.TemporaryDirectory() as config_dir, tempfile.TemporaryDirectory() as cwd:
+            project_root = Path(cwd)
+            with mock.patch.dict(os.environ, {"XDG_CONFIG_HOME": config_dir}), mock.patch("pathlib.Path.cwd", return_value=project_root):
+                (shared_store() / "demo").mkdir(parents=True)
+                link_skill("demo", "default", project=True, ctx=Context(project_root, {
+                    "default": {"project": ".agents", "global": str(Path(config_dir) / "agents")},
+                }))
+
+                output = StringIO()
+                with redirect_stdout(output):
+                    main(["remove", "default", "demo", "--link"])
+
+                self.assertFalse((project_root / ".agents" / "skills" / "demo").exists())
+                self.assertFalse((shared_store() / "demo").exists())
+                self.assertIn("\033[31m[remove]\033[0m[project] \033[3mdemo\033[0m", output.getvalue())
+                self.assertIn("\033[31m[remove]\033[0m\033[1m[global]\033[0m \033[3mdemo\033[0m", output.getvalue())
+
     def test_remove_project_skill_cleans_empty_project_prefix(self) -> None:
         with tempfile.TemporaryDirectory() as config_dir, tempfile.TemporaryDirectory() as cwd:
             project_root = Path(cwd)
@@ -160,7 +178,7 @@ class RemoveCommandTests(unittest.TestCase):
 
                 self.assertFalse((shared_store() / "demo").exists())
                 self.assertFalse((project_root / ".tool" / "skills" / "demo").exists())
-                self.assertIn("removed:", output.getvalue())
+                self.assertIn("\033[31m[remove]\033[0m[project] \033[3mdemo\033[0m", output.getvalue())
 
     def test_remove_all_cleans_empty_recorded_project_prefix(self) -> None:
         with tempfile.TemporaryDirectory() as config_dir, tempfile.TemporaryDirectory() as cwd:

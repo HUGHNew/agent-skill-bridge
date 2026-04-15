@@ -12,6 +12,17 @@ from .skills import copy_skill, iter_skills, link_skill, remove_path, remove_ski
 from .usage import remove_harness_usage, usage_project_paths
 
 
+RESET = "\033[0m"
+BOLD = "\033[1m"
+ITALIC = "\033[3m"
+OP_COLORS = {
+    "copy": "\033[33m",
+    "link": "\033[32m",
+    "remove": "\033[31m",
+    "sync": "\033[34m",
+}
+
+
 def confirm(prompt: str) -> bool:
     try:
         answer = input(f"{prompt} [y/N] ")
@@ -95,19 +106,20 @@ def print_level(title: str, folder: Path) -> bool:
 
 
 def cmd_copy(args: argparse.Namespace) -> int:
-    return run_import(args, copy_skill, "copied")
+    return run_import(args, copy_skill, "copy")
 
 
 def cmd_link(args: argparse.Namespace) -> int:
-    return run_import(args, link_skill, "linked")
+    return run_import(args, link_skill, "link")
 
 
-def run_import(args: argparse.Namespace, action: Any, label: str) -> int:
+def run_import(args: argparse.Namespace, action: Any, op: str) -> int:
     ctx = Context.create()
     harness, skills = split_harness_and_skills(args.values, ctx)
+    level = operation_level(target_project(args))
     for skill in skills:
         destination = action(skill, harness, target_project(args), ctx)
-        print(f"{label}: {skill} -> {destination}")
+        print_operation(op, level, skill, destination)
     return 0
 
 
@@ -131,7 +143,8 @@ def cmd_sync(args: argparse.Namespace) -> int:
     if not skills:
         raise SystemExit(f"No skills found in shared store: {shared_store()}")
     action = copy_skill if args.copy else link_skill
-    mode = "copy" if args.copy else "link"
+    op = "copy" if args.copy else "link"
+    level = operation_level(target_project(args))
     synced = 0
     for skill in skills:
         try:
@@ -141,9 +154,9 @@ def cmd_sync(args: argparse.Namespace) -> int:
                 print(f"skip existing: {ctx.target_skills(args.dst_harness, target_project(args)) / skill}")
                 continue
             raise
-        print(f"{mode}: {skill} -> {target}")
+        print_operation(op, level, skill, target)
         synced += 1
-    print(f"synced {synced} skills")
+    print_operation("sync", level, f"{synced} skills", ctx.target_skills(args.dst_harness, target_project(args)))
     return 0
 
 
@@ -165,8 +178,40 @@ def cmd_remove(args: argparse.Namespace) -> int:
     for target in targets:
         removed = remove_skill(target, harness, args.global_, args.link, args.all, ctx)
         for path in removed:
-            print(f"removed: {path}")
+            print_operation("remove", infer_removed_level(path, ctx), path.name, path)
     return 0
+
+
+def operation_level(project: bool) -> str:
+    return "project" if project else "global"
+
+
+def infer_removed_level(path: Path, ctx: Context) -> str:
+    if path.parent.resolve() == shared_store().resolve():
+        return "global"
+    for harness in ctx.mapper:
+        if path.parent.resolve() == ctx.global_skills(harness).resolve():
+            return "global"
+    return "project"
+
+
+def print_operation(op: str, level: str, skill: str, path: Path) -> None:
+    print(f"{style_op(op)}{style_level(level)} {style_skill(skill)} -> {path}")
+
+
+def style_op(op: str) -> str:
+    color = OP_COLORS.get(op, "")
+    return f"{color}[{op}]{RESET}" if color else f"[{op}]"
+
+
+def style_level(level: str) -> str:
+    if level == "global":
+        return f"{BOLD}[{level}]{RESET}"
+    return f"[{level}]"
+
+
+def style_skill(skill: str) -> str:
+    return f"{ITALIC}{skill}{RESET}"
 
 
 def cmd_completion(args: argparse.Namespace) -> int:

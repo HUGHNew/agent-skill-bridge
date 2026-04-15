@@ -47,24 +47,30 @@ class CopyLinkTests(unittest.TestCase):
                 (shared_store() / "demo").mkdir(parents=True)
                 (shared_store() / "demo" / "SKILL.md").write_text("demo\n", encoding="utf-8")
 
-                with redirect_stdout(StringIO()):
+                copy_output = StringIO()
+                with redirect_stdout(copy_output):
                     main(["copy", "tool", "demo", "--global"])
                 self.assertTrue((Path(config_dir) / "tool" / "skills" / "demo").exists())
+                self.assertIn("\033[33m[copy]\033[0m\033[1m[global]\033[0m \033[3mdemo\033[0m", copy_output.getvalue())
 
-                with redirect_stdout(StringIO()):
+                remove_output = StringIO()
+                with redirect_stdout(remove_output):
                     main(["remove", "tool", "demo", "--global"])
                 self.assertFalse((Path(config_dir) / "tool" / "skills" / "demo").exists())
+                self.assertIn("\033[31m[remove]\033[0m\033[1m[global]\033[0m \033[3mdemo\033[0m", remove_output.getvalue())
 
     def test_copy_defaults_to_project_level(self) -> None:
         with tempfile.TemporaryDirectory() as config_dir, tempfile.TemporaryDirectory() as cwd:
             with mock.patch.dict(os.environ, {"XDG_CONFIG_HOME": config_dir}), mock.patch("pathlib.Path.cwd", return_value=Path(cwd)):
                 (shared_store() / "demo").mkdir(parents=True)
 
-                with redirect_stdout(StringIO()):
+                output = StringIO()
+                with redirect_stdout(output):
                     main(["copy", "default", "demo"])
 
                 self.assertTrue((Path(cwd) / ".agents" / "skills" / "demo").exists())
                 self.assertFalse((Path(cwd) / ".agents" / "skills" / "demo").is_symlink())
+                self.assertIn("\033[33m[copy]\033[0m[project] \033[3mdemo\033[0m", output.getvalue())
 
     def test_copy_without_positionals_picks_harness_then_skills(self) -> None:
         with tempfile.TemporaryDirectory() as config_dir, tempfile.TemporaryDirectory() as cwd:

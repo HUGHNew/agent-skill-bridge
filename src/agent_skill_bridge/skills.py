@@ -108,8 +108,9 @@ def remove_skill(target: str, harness: str, global_only: bool, linked: bool, all
             if linked and candidate.is_symlink():
                 linked_target = candidate.resolve()
                 remove_path(candidate)
-                if linked_target.exists() and shared_store() in linked_target.parents:
+                if linked_target.exists() and shared_store().resolve() in linked_target.parents:
                     remove_path(linked_target)
+                    removed.append(linked_target)
             else:
                 remove_path(candidate)
             removed.append(candidate)
