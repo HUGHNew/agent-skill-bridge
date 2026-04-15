@@ -217,7 +217,7 @@ class RemoveCommandTests(unittest.TestCase):
                     main(["remove", "tool", "project-skill"])
 
                 usage = json.loads((Path(config_dir) / "agents" / "asb-usage.json").read_text(encoding="utf-8"))
-                self.assertEqual(usage["tool"]["globals"]["tool"]["global-skill"], "link")
+                self.assertEqual(usage["default"]["globals"]["tool"]["global-skill"], "link")
 
     def test_remove_without_skill_picks_from_project_level(self) -> None:
         with tempfile.TemporaryDirectory() as config_dir, tempfile.TemporaryDirectory() as cwd:

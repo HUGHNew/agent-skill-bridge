@@ -130,11 +130,13 @@ def cmd_sync(args: argparse.Namespace) -> int:
     if not source_skills:
         print(f"source has no skills: {source}")
         return 0
+    source_only_skills: set[str] = set()
     for skill in source_skills:
         if (shared_store() / skill).exists() or (shared_store() / skill).is_symlink():
             continue
         if args.all:
             mirror_skill_to_shared_store(source / skill, skill)
+            source_only_skills.add(skill)
             print(f"added to shared store: {skill} -> {shared_store() / skill}")
         else:
             print(f"warning: source skill not found in shared store: {skill}", file=sys.stderr)
@@ -148,7 +150,8 @@ def cmd_sync(args: argparse.Namespace) -> int:
     synced = 0
     for skill in skills:
         try:
-            target = action(skill, args.dst_harness, target_project(args), ctx)
+            usage_owner = args.src_harness if skill in source_only_skills else "default"
+            target = action(skill, args.dst_harness, target_project(args), ctx, usage_owner)
         except SystemExit as exc:
             if str(exc).startswith("Destination already exists:"):
                 print(f"skip existing: {ctx.target_skills(args.dst_harness, target_project(args)) / skill}")

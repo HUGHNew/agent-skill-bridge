@@ -38,7 +38,7 @@ def ensure_available_destination(destination: Path) -> None:
     destination.parent.mkdir(parents=True, exist_ok=True)
 
 
-def copy_skill(skill: str, harness: str, project: bool, ctx: Context) -> Path:
+def copy_skill(skill: str, harness: str, project: bool, ctx: Context, usage_owner: str = "default") -> Path:
     source = ensure_skill_source(skill)
     destination = ctx.target_skills(harness, project) / skill
     if source.resolve() == destination.resolve():
@@ -48,11 +48,11 @@ def copy_skill(skill: str, harness: str, project: bool, ctx: Context) -> Path:
     if project:
         record_usage(harness, ctx.cwd, skill, "copy")
     else:
-        record_global_usage(harness, skill, "copy")
+        record_global_usage(usage_owner, harness, skill, "copy")
     return destination
 
 
-def link_skill(skill: str, harness: str, project: bool, ctx: Context) -> Path:
+def link_skill(skill: str, harness: str, project: bool, ctx: Context, usage_owner: str = "default") -> Path:
     source = ensure_skill_source(skill)
     destination = ctx.target_skills(harness, project) / skill
     if source.resolve() == destination.resolve():
@@ -62,7 +62,7 @@ def link_skill(skill: str, harness: str, project: bool, ctx: Context) -> Path:
     if project:
         record_usage(harness, ctx.cwd, skill, "link")
     else:
-        record_global_usage(harness, skill, "link")
+        record_global_usage(usage_owner, harness, skill, "link")
     return destination
 
 
@@ -130,7 +130,7 @@ def remove_skill_everywhere(skill: str, ctx: Context) -> list[Path]:
     usage_entries = find_skill_usage(skill)
     global_usage_entries = find_skill_global_usage(skill)
     candidates = [ctx.global_skills("default") / skill]
-    candidates.extend(ctx.global_skills(harness) / skill for harness in global_usage_entries)
+    candidates.extend(ctx.global_skills(target_harness) / skill for _, target_harness in global_usage_entries)
     removed_usage_entries: list[tuple[str, Path]] = []
     removed_global_usage_entries: list[str] = []
     for harness, project in usage_entries:
@@ -147,9 +147,9 @@ def remove_skill_everywhere(skill: str, ctx: Context) -> list[Path]:
                 if candidate == project_skill_path(ctx, harness, project) / skill
             )
             removed_global_usage_entries.extend(
-                harness
-                for harness in global_usage_entries
-                if candidate == ctx.global_skills(harness) / skill
+                (owner_harness, target_harness)
+                for owner_harness, target_harness in global_usage_entries
+                if candidate == ctx.global_skills(target_harness) / skill
             )
     if not removed:
         raise SystemExit(f"Unknown skill: {skill}")

@@ -47,19 +47,24 @@ os.getenv("XDG_CONFIG_HOME", "~/.config") + "/" + "agents" + "/asb-usage.json"
 
 Usage tracking (the <harness> must exist in the [mapper](#config)):
 ```text
-<harness>: {
+<owner-harness>: {
     "projects": {
         <proj>: {
             <skill>: <mode>
         }
     },
     "globals": {
-        <harness>: {
+        <target-harness>: {
             <skill>: <mode>
         }
     }
 }
 ```
+
+Global usage is grouped by skill origin. Skills that already exist in the
+shared store are recorded under `default.globals.<target-harness>`. Source-only
+skills imported during `sync --all` are recorded under
+`<src-harness>.globals.<target-harness>`.
 
 ## Install
 

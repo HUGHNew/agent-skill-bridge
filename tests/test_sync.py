@@ -54,7 +54,7 @@ class SyncCommandTests(unittest.TestCase):
                     main(["sync", "src", "dst", "--global"])
 
                 usage = json.loads((Path(config_dir) / "agents" / "asb-usage.json").read_text(encoding="utf-8"))
-                self.assertEqual(usage["dst"]["globals"]["dst"]["demo"], "link")
+                self.assertEqual(usage["default"]["globals"]["dst"]["demo"], "link")
 
     def test_sync_warns_for_source_only_skills_without_all(self) -> None:
         with tempfile.TemporaryDirectory() as config_dir, tempfile.TemporaryDirectory() as cwd:
@@ -95,6 +95,28 @@ class SyncCommandTests(unittest.TestCase):
                 self.assertEqual("", error.getvalue())
                 self.assertTrue((shared_store() / "source-only").exists())
                 self.assertTrue((Path(cwd) / ".dst" / "skills" / "source-only").is_symlink())
+                usage = json.loads((Path(config_dir) / "agents" / "asb-usage.json").read_text(encoding="utf-8"))
+                self.assertEqual(usage["dst"]["projects"][str(Path(cwd).resolve())]["source-only"], "link")
+
+    def test_sync_all_records_shared_and_source_only_global_owners(self) -> None:
+        with tempfile.TemporaryDirectory() as config_dir, tempfile.TemporaryDirectory() as cwd:
+            with mock.patch.dict(os.environ, {"XDG_CONFIG_HOME": config_dir}), mock.patch("pathlib.Path.cwd", return_value=Path(cwd)):
+                src_root = Path(config_dir) / "claude-test"
+                dst_root = Path(config_dir) / "codex-test"
+                with redirect_stdout(StringIO()):
+                    main(["config", "add", "claude-test", "-g", str(src_root)])
+                    main(["config", "add", "codex-test", "-g", str(dst_root)])
+                for skill in ("shared-a", "shared-b", "shared-c", "claude-only"):
+                    (src_root / "skills" / skill).mkdir(parents=True)
+                for skill in ("shared-a", "shared-b", "shared-c"):
+                    (shared_store() / skill).mkdir(parents=True)
+
+                with redirect_stdout(StringIO()):
+                    main(["sync", "claude-test", "codex-test", "--global", "--all"])
+
+                usage = json.loads((Path(config_dir) / "agents" / "asb-usage.json").read_text(encoding="utf-8"))
+                self.assertEqual(set(usage["default"]["globals"]["codex-test"]), {"shared-a", "shared-b", "shared-c"})
+                self.assertEqual(usage["claude-test"]["globals"]["codex-test"], {"claude-only": "link"})
 
     def test_sync_empty_source_reports_done_without_syncing(self) -> None:
         with tempfile.TemporaryDirectory() as config_dir, tempfile.TemporaryDirectory() as cwd:
