@@ -1,28 +1,23 @@
 from __future__ import annotations
 
 import json
-import os
 from dataclasses import dataclass
 from pathlib import Path
 
 
-def config_home() -> Path:
-    return Path(os.getenv("XDG_CONFIG_HOME", "~/.config")).expanduser()
-
-
 def manager_root() -> Path:
-    return config_home() / "agents"
+    return Path("~/.agents").expanduser()
 
 
 def shared_store() -> Path:
-    return config_home() / "agents" / "skills"
+    return manager_root() / "skills"
 
 
 def default_mapper() -> dict[str, dict[str, str]]:
     return {
         "default": {
             "project": ".agents",
-            "global": str(config_home() / "agents"),
+            "global": "~/.agents",
         },
         "claude-code": {
             "project": ".claude",

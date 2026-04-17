@@ -17,13 +17,13 @@ from agent_skill_bridge.config import load_config_map
 
 class ConfigCommandTests(unittest.TestCase):
     def test_config_add_and_remove(self) -> None:
-        with tempfile.TemporaryDirectory() as config_dir:
-            with mock.patch.dict(os.environ, {"XDG_CONFIG_HOME": config_dir}):
+        with tempfile.TemporaryDirectory() as config_dir, tempfile.TemporaryDirectory() as home:
+            with mock.patch.dict(os.environ, {"XDG_CONFIG_HOME": config_dir, "HOME": home}):
                 with redirect_stdout(StringIO()):
                     main(["config", "add", "custom", "-p", ".custom", "-g", str(Path(config_dir) / "custom")])
                     main(["config", "add", "empty"])
 
-                map_path = Path(config_dir) / "agents" / "asb-mapper.json"
+                map_path = Path(home) / ".agents" / "asb-mapper.json"
                 self.assertIn('"custom"', map_path.read_text(encoding="utf-8"))
                 self.assertIn('"empty": {}', map_path.read_text(encoding="utf-8"))
 
@@ -32,18 +32,19 @@ class ConfigCommandTests(unittest.TestCase):
                 self.assertNotIn('"empty"', map_path.read_text(encoding="utf-8"))
 
     def test_config_file_is_initialized_with_defaults(self) -> None:
-        with tempfile.TemporaryDirectory() as config_dir:
-            with mock.patch.dict(os.environ, {"XDG_CONFIG_HOME": config_dir}):
+        with tempfile.TemporaryDirectory() as config_dir, tempfile.TemporaryDirectory() as home:
+            with mock.patch.dict(os.environ, {"XDG_CONFIG_HOME": config_dir, "HOME": home}):
                 config = load_config_map()
 
-                map_path = Path(config_dir) / "agents" / "asb-mapper.json"
+                map_path = Path(home) / ".agents" / "asb-mapper.json"
                 self.assertTrue(map_path.exists())
                 self.assertIn("codex", config)
                 self.assertIn('"default"', map_path.read_text(encoding="utf-8"))
+                self.assertIn('"global": "~/.agents"', map_path.read_text(encoding="utf-8"))
 
     def test_config_list_output_format(self) -> None:
-        with tempfile.TemporaryDirectory() as config_dir:
-            with mock.patch.dict(os.environ, {"XDG_CONFIG_HOME": config_dir}):
+        with tempfile.TemporaryDirectory() as config_dir, tempfile.TemporaryDirectory() as home:
+            with mock.patch.dict(os.environ, {"XDG_CONFIG_HOME": config_dir, "HOME": home}):
                 with redirect_stdout(StringIO()):
                     main(["config", "add", "custom", "-p", ".custom", "-g", "/tmp/custom"])
 

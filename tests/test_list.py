@@ -16,8 +16,8 @@ from agent_skill_bridge.cli import main
 
 class ListCommandTests(unittest.TestCase):
     def test_list_accepts_positional_harness(self) -> None:
-        with tempfile.TemporaryDirectory() as config_dir:
-            with mock.patch.dict(os.environ, {"XDG_CONFIG_HOME": config_dir}):
+        with tempfile.TemporaryDirectory() as config_dir, tempfile.TemporaryDirectory() as home:
+            with mock.patch.dict(os.environ, {"XDG_CONFIG_HOME": config_dir, "HOME": home}):
                 with redirect_stdout(StringIO()):
                     main(["config", "add", "tool", "-g", str(Path(config_dir) / "tool")])
                 (Path(config_dir) / "tool" / "skills" / "demo").mkdir(parents=True)
@@ -29,10 +29,10 @@ class ListCommandTests(unittest.TestCase):
                 self.assertIn("- demo", output.getvalue())
 
     def test_list_project_and_global_warns_and_uses_default_behavior(self) -> None:
-        with tempfile.TemporaryDirectory() as config_dir, tempfile.TemporaryDirectory() as cwd:
-            with mock.patch.dict(os.environ, {"XDG_CONFIG_HOME": config_dir}), mock.patch("pathlib.Path.cwd", return_value=Path(cwd)):
+        with tempfile.TemporaryDirectory() as config_dir, tempfile.TemporaryDirectory() as cwd, tempfile.TemporaryDirectory() as home:
+            with mock.patch.dict(os.environ, {"XDG_CONFIG_HOME": config_dir, "HOME": home}), mock.patch("pathlib.Path.cwd", return_value=Path(cwd)):
                 (Path(cwd) / ".agents" / "skills" / "project-demo").mkdir(parents=True)
-                (Path(config_dir) / "agents" / "skills" / "global-demo").mkdir(parents=True)
+                (Path(home) / ".agents" / "skills" / "global-demo").mkdir(parents=True)
 
                 output = StringIO()
                 error = StringIO()
@@ -46,8 +46,8 @@ class ListCommandTests(unittest.TestCase):
                 self.assertIn("warning:", error.getvalue())
 
     def test_list_without_harness_uses_existing_project_prefixes(self) -> None:
-        with tempfile.TemporaryDirectory() as config_dir, tempfile.TemporaryDirectory() as cwd:
-            with mock.patch.dict(os.environ, {"XDG_CONFIG_HOME": config_dir}), mock.patch("pathlib.Path.cwd", return_value=Path(cwd)):
+        with tempfile.TemporaryDirectory() as config_dir, tempfile.TemporaryDirectory() as cwd, tempfile.TemporaryDirectory() as home:
+            with mock.patch.dict(os.environ, {"XDG_CONFIG_HOME": config_dir, "HOME": home}), mock.patch("pathlib.Path.cwd", return_value=Path(cwd)):
                 with redirect_stdout(StringIO()):
                     main(["config", "add", "tool", "-p", ".tool", "-g", str(Path(config_dir) / "tool")])
                     main(["config", "add", "unused", "-p", ".unused", "-g", str(Path(config_dir) / "unused")])
@@ -65,13 +65,13 @@ class ListCommandTests(unittest.TestCase):
                 self.assertNotIn("- unused-global", output.getvalue())
 
     def test_list_global_uses_existing_project_prefixes_and_default_global(self) -> None:
-        with tempfile.TemporaryDirectory() as config_dir, tempfile.TemporaryDirectory() as cwd:
-            with mock.patch.dict(os.environ, {"XDG_CONFIG_HOME": config_dir}), mock.patch("pathlib.Path.cwd", return_value=Path(cwd)):
+        with tempfile.TemporaryDirectory() as config_dir, tempfile.TemporaryDirectory() as cwd, tempfile.TemporaryDirectory() as home:
+            with mock.patch.dict(os.environ, {"XDG_CONFIG_HOME": config_dir, "HOME": home}), mock.patch("pathlib.Path.cwd", return_value=Path(cwd)):
                 with redirect_stdout(StringIO()):
                     main(["config", "add", "tool", "-p", ".tool", "-g", str(Path(config_dir) / "tool")])
                 (Path(cwd) / ".tool").mkdir()
                 (Path(config_dir) / "tool" / "skills" / "tool-global").mkdir(parents=True)
-                (Path(config_dir) / "agents" / "skills" / "default-global").mkdir(parents=True)
+                (Path(home) / ".agents" / "skills" / "default-global").mkdir(parents=True)
 
                 output = StringIO()
                 with redirect_stdout(output):

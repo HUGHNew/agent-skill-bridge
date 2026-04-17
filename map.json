@@ -1,7 +1,7 @@
 {
     "default": {
         "project": ".agents",
-        "global": "~/.config/agents"
+        "global": "~/.agents"
     },
     "claude-code": {
         "project": ".claude",

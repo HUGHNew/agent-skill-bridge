@@ -12,6 +12,7 @@ if __package__ in {None, ""}:
         cmd_config_list,
         cmd_config_remove,
         cmd_copy,
+        cmd_install,
         cmd_link,
         cmd_list,
         cmd_remove,
@@ -25,6 +26,7 @@ else:
         cmd_config_list,
         cmd_config_remove,
         cmd_copy,
+        cmd_install,
         cmd_link,
         cmd_list,
         cmd_remove,
@@ -50,6 +52,11 @@ def build_parser() -> argparse.ArgumentParser:
         import_parser.add_argument("-p", "--project", action="store_true", help="write into project-level harness config")
         import_parser.add_argument("-g", "--global", dest="global_", action="store_true", help="write into harness global config")
         import_parser.set_defaults(func=func)
+
+    install_parser = subparsers.add_parser("install", help="install a skill into the default global store")
+    install_parser.add_argument("skill_ref")
+    install_parser.add_argument("-y", "--yes", action="store_true", help="run without prompting")
+    install_parser.set_defaults(func=cmd_install)
 
     remove_parser = subparsers.add_parser("remove", help="remove a skill")
     remove_parser.add_argument("values", nargs="*", help="harness name followed by optional skill names or folders")

@@ -17,9 +17,9 @@ from agent_skill_bridge.usage import record_global_usage, record_usage
 
 class UsageCommandTests(unittest.TestCase):
     def test_usage_prints_globals_then_projects(self) -> None:
-        with tempfile.TemporaryDirectory() as config_dir, tempfile.TemporaryDirectory() as cwd:
+        with tempfile.TemporaryDirectory() as config_dir, tempfile.TemporaryDirectory() as cwd, tempfile.TemporaryDirectory() as home:
             project = Path(cwd)
-            with mock.patch.dict(os.environ, {"XDG_CONFIG_HOME": config_dir}):
+            with mock.patch.dict(os.environ, {"XDG_CONFIG_HOME": config_dir, "HOME": home}):
                 record_global_usage("default", "codex", "shared-a", "link")
                 record_global_usage("default", "codex", "shared-b", "copy")
                 record_global_usage("claude-code", "codex", "claude-only", "link")
@@ -31,12 +31,15 @@ class UsageCommandTests(unittest.TestCase):
 
                 self.assertEqual(
                     "\n".join([
+                        "[global]:",
                         "codex",
-                        "  shared-a",
-                        "  shared-b",
+                        "  - shared-a",
+                        "  - shared-b",
+                        "",
+                        "[project]:",
                         "codex",
                         f"  {project.resolve()}",
-                        "    project-skill",
+                        "    - project-skill",
                         "",
                     ]),
                     output.getvalue(),

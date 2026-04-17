@@ -18,9 +18,9 @@ from agent_skill_bridge.config import shared_store
 
 class SyncCommandTests(unittest.TestCase):
     def test_sync_project_reuses_copy_logic_and_records_usage(self) -> None:
-        with tempfile.TemporaryDirectory() as config_dir, tempfile.TemporaryDirectory() as cwd:
+        with tempfile.TemporaryDirectory() as config_dir, tempfile.TemporaryDirectory() as cwd, tempfile.TemporaryDirectory() as home:
             project_root = Path(cwd)
-            with mock.patch.dict(os.environ, {"XDG_CONFIG_HOME": config_dir}), mock.patch("pathlib.Path.cwd", return_value=project_root):
+            with mock.patch.dict(os.environ, {"XDG_CONFIG_HOME": config_dir, "HOME": home}), mock.patch("pathlib.Path.cwd", return_value=project_root):
                 src_root = Path(config_dir) / "src"
                 dst_root = Path(config_dir) / "dst"
                 with redirect_stdout(StringIO()):
@@ -35,13 +35,13 @@ class SyncCommandTests(unittest.TestCase):
                     main(["sync", "src", "dst", "--project", "--copy"])
 
                 self.assertTrue((project_root / ".dst" / "skills" / "demo" / "SKILL.md").exists())
-                usage = json.loads((Path(config_dir) / "agents" / "asb-usage.json").read_text(encoding="utf-8"))
+                usage = json.loads((Path(home) / ".agents" / "asb-usage.json").read_text(encoding="utf-8"))
                 self.assertEqual(usage["dst"]["projects"][str(project_root.resolve())]["demo"], "copy")
 
     def test_sync_global_records_usage(self) -> None:
-        with tempfile.TemporaryDirectory() as config_dir, tempfile.TemporaryDirectory() as cwd:
+        with tempfile.TemporaryDirectory() as config_dir, tempfile.TemporaryDirectory() as cwd, tempfile.TemporaryDirectory() as home:
             project_root = Path(cwd)
-            with mock.patch.dict(os.environ, {"XDG_CONFIG_HOME": config_dir}), mock.patch("pathlib.Path.cwd", return_value=project_root):
+            with mock.patch.dict(os.environ, {"XDG_CONFIG_HOME": config_dir, "HOME": home}), mock.patch("pathlib.Path.cwd", return_value=project_root):
                 src_root = Path(config_dir) / "src"
                 dst_root = Path(config_dir) / "dst"
                 with redirect_stdout(StringIO()):
@@ -53,12 +53,12 @@ class SyncCommandTests(unittest.TestCase):
                 with redirect_stdout(StringIO()):
                     main(["sync", "src", "dst", "--global"])
 
-                usage = json.loads((Path(config_dir) / "agents" / "asb-usage.json").read_text(encoding="utf-8"))
+                usage = json.loads((Path(home) / ".agents" / "asb-usage.json").read_text(encoding="utf-8"))
                 self.assertEqual(usage["default"]["globals"]["dst"]["demo"], "link")
 
     def test_sync_warns_for_source_only_skills_without_all(self) -> None:
-        with tempfile.TemporaryDirectory() as config_dir, tempfile.TemporaryDirectory() as cwd:
-            with mock.patch.dict(os.environ, {"XDG_CONFIG_HOME": config_dir}), mock.patch("pathlib.Path.cwd", return_value=Path(cwd)):
+        with tempfile.TemporaryDirectory() as config_dir, tempfile.TemporaryDirectory() as cwd, tempfile.TemporaryDirectory() as home:
+            with mock.patch.dict(os.environ, {"XDG_CONFIG_HOME": config_dir, "HOME": home}), mock.patch("pathlib.Path.cwd", return_value=Path(cwd)):
                 src_root = Path(config_dir) / "src"
                 dst_root = Path(config_dir) / "dst"
                 with redirect_stdout(StringIO()):
@@ -77,8 +77,8 @@ class SyncCommandTests(unittest.TestCase):
                 self.assertFalse((Path(cwd) / ".dst" / "skills" / "source-only").exists())
 
     def test_sync_all_adds_source_only_skills_to_shared_store(self) -> None:
-        with tempfile.TemporaryDirectory() as config_dir, tempfile.TemporaryDirectory() as cwd:
-            with mock.patch.dict(os.environ, {"XDG_CONFIG_HOME": config_dir}), mock.patch("pathlib.Path.cwd", return_value=Path(cwd)):
+        with tempfile.TemporaryDirectory() as config_dir, tempfile.TemporaryDirectory() as cwd, tempfile.TemporaryDirectory() as home:
+            with mock.patch.dict(os.environ, {"XDG_CONFIG_HOME": config_dir, "HOME": home}), mock.patch("pathlib.Path.cwd", return_value=Path(cwd)):
                 src_root = Path(config_dir) / "src"
                 dst_root = Path(config_dir) / "dst"
                 with redirect_stdout(StringIO()):
@@ -95,12 +95,12 @@ class SyncCommandTests(unittest.TestCase):
                 self.assertEqual("", error.getvalue())
                 self.assertTrue((shared_store() / "source-only").exists())
                 self.assertTrue((Path(cwd) / ".dst" / "skills" / "source-only").is_symlink())
-                usage = json.loads((Path(config_dir) / "agents" / "asb-usage.json").read_text(encoding="utf-8"))
+                usage = json.loads((Path(home) / ".agents" / "asb-usage.json").read_text(encoding="utf-8"))
                 self.assertEqual(usage["dst"]["projects"][str(Path(cwd).resolve())]["source-only"], "link")
 
     def test_sync_all_records_shared_and_source_only_global_owners(self) -> None:
-        with tempfile.TemporaryDirectory() as config_dir, tempfile.TemporaryDirectory() as cwd:
-            with mock.patch.dict(os.environ, {"XDG_CONFIG_HOME": config_dir}), mock.patch("pathlib.Path.cwd", return_value=Path(cwd)):
+        with tempfile.TemporaryDirectory() as config_dir, tempfile.TemporaryDirectory() as cwd, tempfile.TemporaryDirectory() as home:
+            with mock.patch.dict(os.environ, {"XDG_CONFIG_HOME": config_dir, "HOME": home}), mock.patch("pathlib.Path.cwd", return_value=Path(cwd)):
                 src_root = Path(config_dir) / "claude-test"
                 dst_root = Path(config_dir) / "codex-test"
                 with redirect_stdout(StringIO()):
@@ -114,13 +114,13 @@ class SyncCommandTests(unittest.TestCase):
                 with redirect_stdout(StringIO()):
                     main(["sync", "claude-test", "codex-test", "--global", "--all"])
 
-                usage = json.loads((Path(config_dir) / "agents" / "asb-usage.json").read_text(encoding="utf-8"))
+                usage = json.loads((Path(home) / ".agents" / "asb-usage.json").read_text(encoding="utf-8"))
                 self.assertEqual(set(usage["default"]["globals"]["codex-test"]), {"shared-a", "shared-b", "shared-c"})
                 self.assertEqual(usage["claude-test"]["globals"]["codex-test"], {"claude-only": "link"})
 
     def test_sync_empty_source_reports_done_without_syncing(self) -> None:
-        with tempfile.TemporaryDirectory() as config_dir, tempfile.TemporaryDirectory() as cwd:
-            with mock.patch.dict(os.environ, {"XDG_CONFIG_HOME": config_dir}), mock.patch("pathlib.Path.cwd", return_value=Path(cwd)):
+        with tempfile.TemporaryDirectory() as config_dir, tempfile.TemporaryDirectory() as cwd, tempfile.TemporaryDirectory() as home:
+            with mock.patch.dict(os.environ, {"XDG_CONFIG_HOME": config_dir, "HOME": home}), mock.patch("pathlib.Path.cwd", return_value=Path(cwd)):
                 src_root = Path(config_dir) / "src"
                 dst_root = Path(config_dir) / "dst"
                 with redirect_stdout(StringIO()):
@@ -136,8 +136,8 @@ class SyncCommandTests(unittest.TestCase):
                 self.assertFalse((Path(cwd) / ".dst" / "skills" / "shared").exists())
 
     def test_sync_reports_synced_count(self) -> None:
-        with tempfile.TemporaryDirectory() as config_dir, tempfile.TemporaryDirectory() as cwd:
-            with mock.patch.dict(os.environ, {"XDG_CONFIG_HOME": config_dir}), mock.patch("pathlib.Path.cwd", return_value=Path(cwd)):
+        with tempfile.TemporaryDirectory() as config_dir, tempfile.TemporaryDirectory() as cwd, tempfile.TemporaryDirectory() as home:
+            with mock.patch.dict(os.environ, {"XDG_CONFIG_HOME": config_dir, "HOME": home}), mock.patch("pathlib.Path.cwd", return_value=Path(cwd)):
                 src_root = Path(config_dir) / "src"
                 dst_root = Path(config_dir) / "dst"
                 with redirect_stdout(StringIO()):

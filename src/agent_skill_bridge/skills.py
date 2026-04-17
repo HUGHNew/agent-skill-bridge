@@ -1,6 +1,8 @@
 from __future__ import annotations
 
 import shutil
+import subprocess
+import sys
 from pathlib import Path
 from typing import Iterable
 
@@ -129,7 +131,8 @@ def remove_skill(target: str, harness: str, global_only: bool, linked: bool, all
 def remove_skill_everywhere(skill: str, ctx: Context) -> list[Path]:
     usage_entries = find_skill_usage(skill)
     global_usage_entries = find_skill_global_usage(skill)
-    candidates = [ctx.global_skills("default") / skill]
+    default_global = ctx.global_skills("default") / skill
+    candidates: list[Path] = []
     candidates.extend(ctx.global_skills(target_harness) / skill for _, target_harness in global_usage_entries)
     removed_usage_entries: list[tuple[str, Path]] = []
     removed_global_usage_entries: list[str] = []
@@ -137,6 +140,9 @@ def remove_skill_everywhere(skill: str, ctx: Context) -> list[Path]:
         candidates.append(project_skill_path(ctx, harness, project) / skill)
 
     removed: list[Path] = []
+    if remove_default_global_skill(skill, default_global):
+        removed.append(default_global)
+
     for candidate in unique_paths(candidates):
         if candidate.exists() or candidate.is_symlink():
             remove_path(candidate)
@@ -158,6 +164,23 @@ def remove_skill_everywhere(skill: str, ctx: Context) -> list[Path]:
     for harness, project in removed_usage_entries:
         cleanup_project_prefix(harness, ctx, project)
     return removed
+
+
+def remove_default_global_skill(skill: str, path: Path) -> bool:
+    if not path.exists() and not path.is_symlink():
+        return False
+    command = ["npx", "skills", "remove", skill, "-g", "-a", "universal", "-y"]
+    try:
+        subprocess.run(command, check=True)
+        if path.exists() or path.is_symlink():
+            remove_path(path)
+        return True
+    except (FileNotFoundError, subprocess.CalledProcessError) as exc:
+        print(f"warning: failed to remove default global skill with npx, falling back: {exc}", file=sys.stderr)
+        if path.exists() or path.is_symlink():
+            remove_path(path)
+            return True
+    return False
 
 
 def project_skill_path(ctx: Context, harness: str, project: Path) -> Path:

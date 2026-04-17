@@ -9,6 +9,7 @@ between harnesses.
 
 Features:
 - skill list/remove
+- skill install
 - skill link/copy
 - skill sync
 - usage output
@@ -27,13 +28,13 @@ bold, and the skill name is italic.
 The manager files are stored under:
 
 ```python
-os.getenv("XDG_CONFIG_HOME", "~/.config") + "/" + "agents"
+~/.agents
 ```
 
 The shared skill store is:
 
 ```python
-os.getenv("XDG_CONFIG_HOME", "~/.config") + "/agents/skills"
+~/.agents/skills
 ```
 
 A harness is an agent tool that consumes skills, such as Codex or Claude Code.
@@ -43,7 +44,7 @@ configuration paths.
 Agent Skill Bridge maintains the skills folder and a usage file for tracking:
 
 ```python
-os.getenv("XDG_CONFIG_HOME", "~/.config") + "/" + "agents" + "/asb-usage.json"
+~/.agents/asb-usage.json
 ```
 
 Usage tracking (the <harness> must exist in the [mapper](#config)):
@@ -121,6 +122,8 @@ For <skill-name>
 - `-l`/`--link`: remove the symlink and its linked shared-store skill
 - `-a`/`--all`: requires a skill name, removes it from the default global store
   and from project paths recorded in usage
+  by first running `npx skills remove <skill-name> -g -a universal -y`, then
+  falling back to direct deletion if that command fails
 - By default, we just remove the skill from current project
 - no harness: open a terminal UI picker for harness first, then skills
 - skill picker controls: Arrow moves, Space selects, Enter confirms
@@ -133,6 +136,21 @@ For <skill-folder> (absolute path or relative path)
 - For project skill, remove from the detected project harness path
 
 For unknown name/folder, just show error message
+
+## Install
+
+```sh
+asb install <skill-ref> [-y]
+```
+
+Install a skill into the default global store by running:
+
+```sh
+npx skills add <skill-ref> -a universal -g -y
+```
+
+Without `-y`, Agent Skill Bridge asks whether to run the install. With `-y`, it
+runs immediately. The `npx` command always receives `-y`.
 
 ## Link/Copy
 
@@ -194,17 +212,19 @@ Print `asb-usage.json` as globals first, then projects.
 
 Global usage:
 ```text
+[global]:
 <harness>
-  <skill>
-  <skill>
+  - <skill>
+  - <skill>
 ```
 
 Project usage:
 ```text
+[project]:
 <harness>
   <project-path>
-    <skill>
-    <skill>
+    - <skill>
+    - <skill>
 ```
 
 ## Config
@@ -228,12 +248,12 @@ deletes them without asking.
 
 Default storage:
 - project: .agents/skills
-- global: os.getenv("XDG_CONFIG_HOME", "~/.config") + "/agents/skills"
+- global: ~/.agents/skills
 
 For different harness, the mapper file is:
 
 ```python
-os.getenv("XDG_CONFIG_HOME", "~/.config") + "/" + "agents" + "/asb-mapper.json"
+~/.agents/asb-mapper.json
 ```
 
 The `default` entry is always provided by Agent Skill Bridge and is not shown by

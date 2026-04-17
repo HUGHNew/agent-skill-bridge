@@ -18,14 +18,14 @@ from agent_skill_bridge.skills import copy_skill, iter_skills, link_skill
 
 class CopyLinkTests(unittest.TestCase):
     def test_copy_and_link_from_shared_store(self) -> None:
-        with tempfile.TemporaryDirectory() as config_dir, tempfile.TemporaryDirectory() as cwd:
-            with mock.patch.dict(os.environ, {"XDG_CONFIG_HOME": config_dir}):
+        with tempfile.TemporaryDirectory() as config_dir, tempfile.TemporaryDirectory() as cwd, tempfile.TemporaryDirectory() as home:
+            with mock.patch.dict(os.environ, {"XDG_CONFIG_HOME": config_dir, "HOME": home}):
                 (shared_store() / "demo").mkdir(parents=True)
                 (shared_store() / "demo" / "SKILL.md").write_text("demo\n", encoding="utf-8")
                 ctx = Context(Path(cwd), {
                     "default": {
                         "project": ".agents",
-                        "global": str(Path(config_dir) / "agents"),
+                        "global": str(Path(home) / ".agents"),
                     },
                     "codex": {
                         "global": str(Path(config_dir) / "codex"),
@@ -40,8 +40,8 @@ class CopyLinkTests(unittest.TestCase):
                 self.assertEqual(iter_skills(Path(cwd) / ".agents" / "skills"), ["demo"])
 
     def test_copy_and_remove_accept_leading_harness(self) -> None:
-        with tempfile.TemporaryDirectory() as config_dir:
-            with mock.patch.dict(os.environ, {"XDG_CONFIG_HOME": config_dir}):
+        with tempfile.TemporaryDirectory() as config_dir, tempfile.TemporaryDirectory() as home:
+            with mock.patch.dict(os.environ, {"XDG_CONFIG_HOME": config_dir, "HOME": home}):
                 with redirect_stdout(StringIO()):
                     main(["config", "add", "tool", "-g", str(Path(config_dir) / "tool")])
                 (shared_store() / "demo").mkdir(parents=True)
@@ -60,8 +60,8 @@ class CopyLinkTests(unittest.TestCase):
                 self.assertIn("\033[31m[remove]\033[0m\033[1m[global]\033[0m \033[3mdemo\033[0m", remove_output.getvalue())
 
     def test_copy_defaults_to_project_level(self) -> None:
-        with tempfile.TemporaryDirectory() as config_dir, tempfile.TemporaryDirectory() as cwd:
-            with mock.patch.dict(os.environ, {"XDG_CONFIG_HOME": config_dir}), mock.patch("pathlib.Path.cwd", return_value=Path(cwd)):
+        with tempfile.TemporaryDirectory() as config_dir, tempfile.TemporaryDirectory() as cwd, tempfile.TemporaryDirectory() as home:
+            with mock.patch.dict(os.environ, {"XDG_CONFIG_HOME": config_dir, "HOME": home}), mock.patch("pathlib.Path.cwd", return_value=Path(cwd)):
                 (shared_store() / "demo").mkdir(parents=True)
 
                 output = StringIO()
@@ -73,8 +73,8 @@ class CopyLinkTests(unittest.TestCase):
                 self.assertIn("\033[33m[copy]\033[0m[project] \033[3mdemo\033[0m", output.getvalue())
 
     def test_copy_without_positionals_picks_harness_then_skills(self) -> None:
-        with tempfile.TemporaryDirectory() as config_dir, tempfile.TemporaryDirectory() as cwd:
-            with mock.patch.dict(os.environ, {"XDG_CONFIG_HOME": config_dir}), mock.patch("pathlib.Path.cwd", return_value=Path(cwd)):
+        with tempfile.TemporaryDirectory() as config_dir, tempfile.TemporaryDirectory() as cwd, tempfile.TemporaryDirectory() as home:
+            with mock.patch.dict(os.environ, {"XDG_CONFIG_HOME": config_dir, "HOME": home}), mock.patch("pathlib.Path.cwd", return_value=Path(cwd)):
                 (shared_store() / "demo").mkdir(parents=True)
                 with redirect_stdout(StringIO()):
                     main(["config", "add", "tool", "-p", ".tool"])
@@ -92,8 +92,8 @@ class CopyLinkTests(unittest.TestCase):
                 self.assertTrue((Path(cwd) / ".tool" / "skills" / "demo").exists())
 
     def test_copy_requires_leading_harness_when_positionals_exist(self) -> None:
-        with tempfile.TemporaryDirectory() as config_dir:
-            with mock.patch.dict(os.environ, {"XDG_CONFIG_HOME": config_dir}):
+        with tempfile.TemporaryDirectory() as config_dir, tempfile.TemporaryDirectory() as home:
+            with mock.patch.dict(os.environ, {"XDG_CONFIG_HOME": config_dir, "HOME": home}):
                 (shared_store() / "demo").mkdir(parents=True)
 
                 with self.assertRaises(SystemExit) as raised:

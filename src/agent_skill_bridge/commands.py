@@ -2,6 +2,7 @@ from __future__ import annotations
 
 import argparse
 import shutil
+import subprocess
 import sys
 from pathlib import Path
 from typing import Any
@@ -17,6 +18,7 @@ BOLD = "\033[1m"
 ITALIC = "\033[3m"
 OP_COLORS = {
     "copy": "\033[33m",
+    "install": "\033[36m",
     "link": "\033[32m",
     "remove": "\033[31m",
     "sync": "\033[34m",
@@ -111,6 +113,16 @@ def cmd_copy(args: argparse.Namespace) -> int:
 
 def cmd_link(args: argparse.Namespace) -> int:
     return run_import(args, link_skill, "link")
+
+
+def cmd_install(args: argparse.Namespace) -> int:
+    if not args.yes and not confirm(f"Install skill {args.skill_ref!r}?"):
+        print(f"skip: {args.skill_ref}")
+        return 0
+    command = ["npx", "skills", "add", args.skill_ref, "-a", "universal", "-g", "-y"]
+    subprocess.run(command, check=True)
+    print_operation("install", "global", args.skill_ref, Path(default_mapper()["default"]["global"]).expanduser() / "skills")
+    return 0
 
 
 def run_import(args: argparse.Namespace, action: Any, op: str) -> int:
@@ -220,9 +232,9 @@ def style_skill(skill: str) -> str:
 def cmd_completion(args: argparse.Namespace) -> int:
     command = "asb"
     if args.shell == "bash":
-        print(f"complete -W 'list copy link remove sync completion usage config' {command}")
+        print(f"complete -W 'list copy link install remove sync completion usage config' {command}")
     else:
-        print(f"#compdef {command}\n_arguments '1:command:(list copy link remove sync completion usage config)'")
+        print(f"#compdef {command}\n_arguments '1:command:(list copy link install remove sync completion usage config)'")
     return 0
 
 
