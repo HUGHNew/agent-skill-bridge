@@ -22,9 +22,6 @@ Operation output uses:
 [<op>][<level>] <skill-name> -> <path>
 ```
 
-`link` is green, `copy` is yellow, `remove` is red, `sync` is blue, `global` is
-bold, and the skill name is italic.
-
 The manager files are stored under:
 
 ```python
@@ -103,7 +100,7 @@ asb list [<harness>] [--global | --project]
 
 Example:
 ```
-Project:
+Project (<harness>):
 - <skill-name>
 ...
 
@@ -114,7 +111,7 @@ Global (<harness>):
 ## Remove
 
 ```sh
-asb remove [<harness>] [<skill-name | skill-folder>...] [--global] [--link] [--all]
+asb remove [<harness>] [<skill-name>...] [--global] [--link] [--all]
 ```
 
 For <skill-name>
@@ -131,11 +128,7 @@ For <skill-name>
 - project-level remove deletes the project prefix too when it only contains an
   empty `skills` folder
 
-For <skill-folder> (absolute path or relative path)
-- For global skill, remove from the default global store and recorded usage
-- For project skill, remove from the detected project harness path
-
-For unknown name/folder, just show error message
+For unknown skill name, just show error message
 
 ## Install
 

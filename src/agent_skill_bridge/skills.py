@@ -77,29 +77,13 @@ def remove_path(path: Path) -> None:
 
 def remove_skill(target: str, harness: str, global_only: bool, linked: bool, all_known: bool, ctx: Context) -> list[Path]:
     if all_known:
-        if is_path_target(target):
-            raise SystemExit("remove --all requires a skill name, not a skill folder.")
         return remove_skill_everywhere(target, ctx)
-
-    target_path = Path(target).expanduser()
-    if is_path_target(target):
-        if not target_path.is_absolute():
-            target_path = (ctx.cwd / target_path).resolve()
-        if not target_path.exists() and not target_path.is_symlink():
-            raise SystemExit(f"Unknown skill folder: {target}")
-        detected = detect_skill_folder(target_path, ctx)
-        if detected is None:
-            raise SystemExit(f"Unknown skill folder level: {target}")
-        skill_harness, skill_global, skill = detected
-        if skill_global:
-            return remove_skill_everywhere(skill, ctx)
-        harness = skill_harness
-        global_only = False
-    else:
-        skill = target
+    skill = target
 
     candidates: list[Path] = []
     if global_only:
+        if harness == "default":
+            return remove_skill_everywhere(skill, ctx)
         candidates.append(ctx.global_skills(harness) / skill)
     else:
         candidates.append(ctx.project_skills(harness) / skill)
@@ -211,21 +195,6 @@ def cleanup_project_prefix(harness: str, ctx: Context, project: Path | None = No
     if any(entry.name != "skills" for entry in prefix.iterdir()):
         return
     shutil.rmtree(prefix)
-
-
-def is_path_target(target: str) -> bool:
-    return Path(target).expanduser().is_absolute() or "/" in target or target.startswith(".")
-
-
-def detect_skill_folder(path: Path, ctx: Context) -> tuple[str, bool, str] | None:
-    for harness in ctx.mapper:
-        global_root = ctx.global_skills(harness)
-        if path.parent == global_root:
-            return harness, True, path.name
-        project_root = ctx.project_skills(harness)
-        if path.parent == project_root:
-            return harness, False, path.name
-    return None
 
 
 def unique_paths(paths: Iterable[Path]) -> list[Path]:

@@ -48,41 +48,6 @@ class RemoveCommandTests(unittest.TestCase):
                 self.assertFalse((global_root / "skills").exists())
                 self.assertFalse((project_root / ".tool" / "skills").exists())
 
-    def test_remove_project_folder_removes_project_skill(self) -> None:
-        with tempfile.TemporaryDirectory() as config_dir, tempfile.TemporaryDirectory() as cwd, tempfile.TemporaryDirectory() as home:
-            with mock.patch.dict(os.environ, {"XDG_CONFIG_HOME": config_dir, "HOME": home}), mock.patch("pathlib.Path.cwd", return_value=Path(cwd)):
-                (shared_store() / "demo").mkdir(parents=True)
-                with redirect_stdout(StringIO()):
-                    main(["copy", "default", "demo"])
-                folder = Path(cwd) / ".agents" / "skills" / "demo"
-
-                with redirect_stdout(StringIO()):
-                    main(["remove", "default", str(folder)])
-
-                self.assertFalse(folder.exists())
-
-    def test_remove_project_folder_ignores_global_flag(self) -> None:
-        with tempfile.TemporaryDirectory() as config_dir, tempfile.TemporaryDirectory() as cwd, tempfile.TemporaryDirectory() as home:
-            project_root = Path(cwd)
-            with mock.patch.dict(os.environ, {"XDG_CONFIG_HOME": config_dir, "HOME": home}), mock.patch("pathlib.Path.cwd", return_value=project_root):
-                with redirect_stdout(StringIO()):
-                    main(["config", "add", "tool", "-p", ".tool", "-g", str(Path(config_dir) / "tool")])
-                (shared_store() / "demo").mkdir(parents=True)
-                ctx = Context(project_root, {
-                    "default": {"project": ".agents", "global": str(Path(home) / ".agents")},
-                    "tool": {"project": ".tool", "global": str(Path(config_dir) / "tool")},
-                })
-                copy_skill("demo", "tool", project=True, ctx=ctx)
-                copy_skill("demo", "tool", project=False, ctx=ctx)
-                folder = project_root / ".tool" / "skills" / "demo"
-                global_folder = Path(config_dir) / "tool" / "skills" / "demo"
-
-                with redirect_stdout(StringIO()):
-                    main(["remove", "tool", str(folder), "--global"])
-
-                self.assertFalse(folder.exists())
-                self.assertTrue(global_folder.exists())
-
     def test_remove_link_outputs_link_and_shared_store_removals(self) -> None:
         with tempfile.TemporaryDirectory() as config_dir, tempfile.TemporaryDirectory() as cwd, tempfile.TemporaryDirectory() as home:
             project_root = Path(cwd)
@@ -128,25 +93,6 @@ class RemoveCommandTests(unittest.TestCase):
 
                 self.assertTrue((project_root / ".agents").exists())
                 self.assertTrue((project_root / ".agents" / "skills").exists())
-
-    def test_remove_global_folder_uses_all_logic(self) -> None:
-        with tempfile.TemporaryDirectory() as config_dir, tempfile.TemporaryDirectory() as cwd, tempfile.TemporaryDirectory() as home:
-            project_root = Path(cwd)
-            with mock.patch.dict(os.environ, {"XDG_CONFIG_HOME": config_dir, "HOME": home}), mock.patch("pathlib.Path.cwd", return_value=project_root):
-                default_global = Path(home) / ".agents" / "skills" / "demo"
-                default_global.mkdir(parents=True)
-                ctx = Context(project_root, {
-                    "default": {"project": ".agents", "global": str(Path(home) / ".agents")},
-                })
-                copy_skill("demo", "default", project=True, ctx=ctx)
-
-                with mock.patch("agent_skill_bridge.skills.subprocess.run") as run:
-                    with redirect_stdout(StringIO()):
-                        main(["remove", "default", str(default_global)])
-
-                self.assertFalse(default_global.exists())
-                self.assertFalse((project_root / ".agents" / "skills" / "demo").exists())
-                run.assert_called_once_with(["npx", "skills", "remove", "demo", "-g", "-a", "universal", "-y"], check=True)
 
     def test_remove_all_keeps_usage_for_missing_recorded_project_path(self) -> None:
         with tempfile.TemporaryDirectory() as config_dir, tempfile.TemporaryDirectory() as cwd, tempfile.TemporaryDirectory() as home:
@@ -200,6 +146,25 @@ class RemoveCommandTests(unittest.TestCase):
 
                 self.assertFalse(default_global.exists())
                 self.assertIn("warning: failed to remove default global skill with npx", error.getvalue())
+
+    def test_remove_default_global_uses_all_logic(self) -> None:
+        with tempfile.TemporaryDirectory() as config_dir, tempfile.TemporaryDirectory() as cwd, tempfile.TemporaryDirectory() as home:
+            project_root = Path(cwd)
+            with mock.patch.dict(os.environ, {"XDG_CONFIG_HOME": config_dir, "HOME": home}), mock.patch("pathlib.Path.cwd", return_value=project_root):
+                default_global = Path(home) / ".agents" / "skills" / "demo"
+                default_global.mkdir(parents=True)
+                record_usage("default", project_root, "demo", "copy")
+                project_skill = project_root / ".agents" / "skills" / "demo"
+                project_skill.mkdir(parents=True)
+
+                with mock.patch("agent_skill_bridge.skills.subprocess.run") as run:
+                    with redirect_stdout(StringIO()):
+                        main(["remove", "default", "demo", "--global"])
+
+                self.assertFalse(default_global.exists())
+                self.assertFalse(project_skill.exists())
+                self.assertEqual({}, json.loads((Path(home) / ".agents" / "asb-usage.json").read_text(encoding="utf-8")))
+                run.assert_called_once_with(["npx", "skills", "remove", "demo", "-g", "-a", "universal", "-y"], check=True)
 
     def test_remove_all_cleans_empty_recorded_project_prefix(self) -> None:
         with tempfile.TemporaryDirectory() as config_dir, tempfile.TemporaryDirectory() as cwd, tempfile.TemporaryDirectory() as home:

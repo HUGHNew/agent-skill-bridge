@@ -248,18 +248,22 @@ def cmd_usage(args: argparse.Namespace) -> int:
 
 
 def print_usage_globals(usage: dict[str, Any]) -> None:
-    printed: set[str] = set()
+    by_harness: dict[str, list[str]] = {}
     for harness_usage in usage.values():
         globals_ = harness_usage.get("globals", {})
         if not isinstance(globals_, dict):
             continue
         for harness, skills in globals_.items():
-            if not isinstance(skills, dict) or harness in printed:
+            if not isinstance(skills, dict):
                 continue
-            print(harness)
+            harness_skills = by_harness.setdefault(harness, [])
             for skill in skills:
-                print(f"  - {skill}")
-            printed.add(harness)
+                if skill not in harness_skills:
+                    harness_skills.append(skill)
+    for harness, skills in by_harness.items():
+        print(harness)
+        for skill in skills:
+            print(f"  - {skill}")
 
 
 def print_usage_projects(usage: dict[str, Any]) -> None:

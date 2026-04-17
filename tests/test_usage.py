@@ -35,6 +35,7 @@ class UsageCommandTests(unittest.TestCase):
                         "codex",
                         "  - shared-a",
                         "  - shared-b",
+                        "  - claude-only",
                         "",
                         "[project]:",
                         "codex",

@@ -59,7 +59,7 @@ def build_parser() -> argparse.ArgumentParser:
     install_parser.set_defaults(func=cmd_install)
 
     remove_parser = subparsers.add_parser("remove", help="remove a skill")
-    remove_parser.add_argument("values", nargs="*", help="harness name followed by optional skill names or folders")
+    remove_parser.add_argument("values", nargs="*", help="harness name followed by optional skill names")
     remove_parser.add_argument("-g", "--global", dest="global_", action="store_true", help="remove from harness global skills")
     remove_parser.add_argument("-l", "--link", action="store_true", help="remove linked shared-store skill too")
     remove_parser.add_argument("-a", "--all", action="store_true", help="remove from default global and recorded project usage")
