@@ -33,24 +33,55 @@ def confirm(prompt: str) -> bool:
     return answer.strip().lower() in {"y", "yes"}
 
 
-def split_harness_and_skills(values: list[str], ctx: Context) -> tuple[str, list[str]]:
+def _skill_hint_for_harness(harness: str, project: bool) -> dict[str, int]:
+    usage = load_usage()
+    hint: dict[str, int] = {}
+    harness_usage = usage.get(harness, {})
+
+    if project:
+        projects = harness_usage.get("projects", {})
+        if isinstance(projects, dict):
+            for skills in projects.values():
+                if isinstance(skills, dict):
+                    for skill, mode in skills.items():
+                        if mode == "link":
+                            hint.setdefault(skill, 1)
+                        elif mode == "copy":
+                            hint[skill] = 2
+    else:
+        for owner, owner_usage in usage.items():
+            globals_ = owner_usage.get("globals", {})
+            if isinstance(globals_, dict):
+                target_skills = globals_.get(harness, {})
+                if isinstance(target_skills, dict):
+                    for skill, mode in target_skills.items():
+                        if mode == "link":
+                            hint.setdefault(skill, 1)
+                        elif mode == "copy":
+                            hint[skill] = 2
+
+    return hint
+
+
+def split_harness_and_skills(values: list[str], ctx: Context, args: argparse.Namespace) -> tuple[str, list[str]]:
     if not values:
-        return choose_harness(ctx, include_default=False), choose_skills()
+        harness = choose_harness(ctx, include_default=False)
+        return harness, choose_skills(skill_hint=_skill_hint_for_harness(harness, target_project(args)))
     harness = values[0]
     if harness not in ctx.mapper:
         raise SystemExit(f"Unknown harness: {harness}")
-    skills = values[1:] or choose_skills()
+    skills = values[1:] or choose_skills(skill_hint=_skill_hint_for_harness(harness, target_project(args)))
     return harness, skills
 
 
 def split_harness_and_targets(values: list[str], ctx: Context, args: argparse.Namespace) -> tuple[str, list[str]]:
     if not values:
         harness = choose_harness(ctx)
-        return harness, choose_skills(ctx.target_skills(harness, target_project(args)))
+        return harness, choose_skills(ctx.target_skills(harness, target_project(args)), skill_hint=_skill_hint_for_harness(harness, target_project(args)))
     harness = values[0]
     if harness not in ctx.mapper:
         raise SystemExit(f"Unknown harness: {harness}")
-    targets = values[1:] or choose_skills(ctx.target_skills(harness, target_project(args)))
+    targets = values[1:] or choose_skills(ctx.target_skills(harness, target_project(args)), skill_hint=_skill_hint_for_harness(harness, target_project(args)))
     return harness, targets
 
 
@@ -119,7 +150,7 @@ def cmd_install(args: argparse.Namespace) -> int:
     if not args.yes and not confirm(f"Install skill {args.skill_ref!r}?"):
         print(f"skip: {args.skill_ref}")
         return 0
-    command = ["npx", "skills", "add", args.skill_ref, "-a", "universal", "-g", "-y"]
+    command = ["npx", "skills", "add", args.skill_ref, "-g", "-a", "universal", "-y"]
     subprocess.run(command, check=True)
     print_operation("install", "global", args.skill_ref, Path(default_mapper()["default"]["global"]).expanduser() / "skills")
     return 0
@@ -127,7 +158,7 @@ def cmd_install(args: argparse.Namespace) -> int:
 
 def run_import(args: argparse.Namespace, action: Any, op: str) -> int:
     ctx = Context.create()
-    harness, skills = split_harness_and_skills(args.values, ctx)
+    harness, skills = split_harness_and_skills(args.values, ctx, args)
     level = operation_level(target_project(args))
     for skill in skills:
         destination = action(skill, harness, target_project(args), ctx)

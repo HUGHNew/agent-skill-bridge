@@ -7,6 +7,12 @@ from questionary import checkbox, select
 from .config import Context, shared_store
 from .skills import iter_skills
 
+MASK = " | "
+
+def mask_off(content: str):
+    if MASK in content:
+        return content[:content.index(MASK)]
+    return content
 
 def choose_harness(ctx: Context, include_default: bool = True) -> str:
     harnesses = [
@@ -17,12 +23,26 @@ def choose_harness(ctx: Context, include_default: bool = True) -> str:
     return choose_one("Select harness", harnesses)
 
 
-def choose_skills(folder: Path | None = None) -> list[str]:
+def choose_skills(
+    folder: Path | None = None,
+    skill_hint: dict[str, int] = {},
+) -> list[str]:
     source = folder or shared_store()
     skills = iter_skills(source)
     if not skills:
         raise SystemExit(f"No skills found: {source}")
-    return choose_many("Select skills", skills)
+
+    labeled: list[str] = []
+    for skill in skills:
+        status = skill_hint.get(skill, 0) # independent
+        if status == 1: # link
+            labeled.append(f"{skill} | [linked]")
+        elif status == 2: # copy
+            labeled.append(f"{skill} | [copied]")
+        else:
+            labeled.append(skill)
+
+    return choose_many("Select skills", labeled)
 
 
 def choose_one(title: str, options: list[str]) -> str:
@@ -48,4 +68,4 @@ def choose_many(title: str, options: list[str]) -> list[str]:
         raise SystemExit("Cancelled.")
     if not selected:
         raise SystemExit("No skills selected.")
-    return selected
+    return [mask_off(s) for s in selected]

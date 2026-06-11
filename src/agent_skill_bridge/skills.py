@@ -119,7 +119,7 @@ def remove_skill_everywhere(skill: str, ctx: Context) -> list[Path]:
     candidates: list[Path] = []
     candidates.extend(ctx.global_skills(target_harness) / skill for _, target_harness in global_usage_entries)
     removed_usage_entries: list[tuple[str, Path]] = []
-    removed_global_usage_entries: list[str] = []
+    removed_global_usage_entries: list[tuple[str, str]] = []
     for harness, project in usage_entries:
         candidates.append(project_skill_path(ctx, harness, project) / skill)
 
