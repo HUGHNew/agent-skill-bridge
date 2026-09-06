@@ -17,6 +17,7 @@ if __package__ in {None, ""}:
         cmd_list,
         cmd_remove,
         cmd_sync,
+        cmd_update,
         cmd_usage,
     )
 else:
@@ -31,6 +32,7 @@ else:
         cmd_list,
         cmd_remove,
         cmd_sync,
+        cmd_update,
         cmd_usage,
     )
 
@@ -57,6 +59,14 @@ def build_parser() -> argparse.ArgumentParser:
     install_parser.add_argument("skill_ref")
     install_parser.add_argument("-y", "--yes", action="store_true", help="run without prompting")
     install_parser.set_defaults(func=cmd_install)
+
+    update_parser = subparsers.add_parser("update", help="update installed skills")
+    update_parser.add_argument("skill_refs", nargs="*")
+    update_scope = update_parser.add_mutually_exclusive_group()
+    update_scope.add_argument("-g", "--global", dest="global_", action="store_true", help="update global skills")
+    update_scope.add_argument("-p", "--project", action="store_true", help="update project skills")
+    update_parser.add_argument("-y", "--yes", action="store_true", help="run without prompting")
+    update_parser.set_defaults(func=cmd_update)
 
     remove_parser = subparsers.add_parser("remove", help="remove a skill")
     remove_parser.add_argument("values", nargs="*", help="harness name followed by optional skill names")

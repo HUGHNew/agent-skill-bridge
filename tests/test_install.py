@@ -22,7 +22,7 @@ class InstallCommandTests(unittest.TestCase):
                 with mock.patch("agent_skill_bridge.commands.subprocess.run") as run, redirect_stdout(output):
                     main(["install", "demo", "-y"])
 
-                run.assert_called_once_with(["npx", "skills", "add", "demo", "-a", "universal", "-g", "-y"], check=True)
+                run.assert_called_once_with(["npx", "skills", "add", "demo", "-g", "-a", "universal", "-y"], check=True)
                 self.assertIn("\033[36m[install]\033[0m\033[1m[global]\033[0m \033[3mdemo\033[0m", output.getvalue())
 
     def test_install_without_yes_prompts_and_runs_when_confirmed(self) -> None:
@@ -30,7 +30,7 @@ class InstallCommandTests(unittest.TestCase):
             with mock.patch.dict(os.environ, {"HOME": home}), mock.patch("agent_skill_bridge.commands.subprocess.run") as run, mock.patch("builtins.input", return_value="y"), redirect_stdout(StringIO()):
                 main(["install", "demo"])
 
-            run.assert_called_once_with(["npx", "skills", "add", "demo", "-a", "universal", "-g", "-y"], check=True)
+            run.assert_called_once_with(["npx", "skills", "add", "demo", "-g", "-a", "universal", "-y"], check=True)
 
     def test_install_without_yes_skips_when_declined(self) -> None:
         output = StringIO()

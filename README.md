@@ -165,6 +165,16 @@ path.
 - By default, operation on project level
 - first positional argument: harness name
 
+## Update
+
+```sh
+asb update [-g | -p] [-y] [<skill-ref>...]
+```
+
+Update skills by running `npx skills update -y`, forwarding the scope and skill
+refs. Without `-y`, Agent Skill Bridge asks for confirmation. Without skill
+refs, it opens the same skill picker used by link/copy.
+
 ## Sync
 
 ```sh

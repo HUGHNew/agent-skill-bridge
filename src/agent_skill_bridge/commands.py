@@ -156,6 +156,21 @@ def cmd_install(args: argparse.Namespace) -> int:
     return 0
 
 
+def cmd_update(args: argparse.Namespace) -> int:
+    skill_refs = args.skill_refs or choose_skills()
+    if not args.yes and not confirm(f"Update skills {', '.join(skill_refs)!r}?"):
+        print(f"skip: {', '.join(skill_refs)}")
+        return 0
+    command = ["npx", "skills", "update", "-y"]
+    if args.global_:
+        command.append("-g")
+    elif args.project:
+        command.append("-p")
+    command.extend(skill_refs)
+    subprocess.run(command, check=True)
+    return 0
+
+
 def run_import(args: argparse.Namespace, action: Any, op: str) -> int:
     ctx = Context.create()
     harness, skills = split_harness_and_skills(args.values, ctx, args)
@@ -263,9 +278,9 @@ def style_skill(skill: str) -> str:
 def cmd_completion(args: argparse.Namespace) -> int:
     command = "asb"
     if args.shell == "bash":
-        print(f"complete -W 'list copy link install remove sync completion usage config' {command}")
+        print(f"complete -W 'list copy link install update remove sync completion usage config' {command}")
     else:
-        print(f"#compdef {command}\n_arguments '1:command:(list copy link install remove sync completion usage config)'")
+        print(f"#compdef {command}\n_arguments '1:command:(list copy link install update remove sync completion usage config)'")
     return 0
 
 
